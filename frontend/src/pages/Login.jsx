@@ -1,0 +1,63 @@
+import React, { useState } from 'react';
+import { useAuth } from '../Context/AuthContext';
+
+const Login = () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const { login } = useAuth();
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const success = login(email, password);
+    if (!success) {
+      setError('Email ou mot de passe incorrect');
+    }
+  };
+
+  return (
+    <div className="login-container">
+      <div className="login-card">
+        <h2>🍽️ RestoManager</h2>
+        <p>Connectez-vous à votre espace</p>
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label>Email</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="exemple@resto.com"
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label>Mot de passe</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              required
+            />
+          </div>
+          {error && <p style={{ color: 'red', marginBottom: '15px' }}>{error}</p>}
+          <button type="submit" className="btn-primary" style={{ width: '100%' }}>
+            Se connecter
+          </button>
+        </form>
+        <div style={{ marginTop: '30px', paddingTop: '20px', borderTop: '1px solid #e0e0e0' }}>
+          <p style={{ fontSize: '12px', color: '#666', textAlign: 'center' }}>
+            <strong>Comptes de démonstration:</strong><br />
+            Admin: admin@resto.com / admin123<br />
+            Serveur: serveur@resto.com / serveur123<br />
+            Cuisinier: cuisinier@resto.com / cuisinier123<br />
+            Client: client@resto.com / client123
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Login;
