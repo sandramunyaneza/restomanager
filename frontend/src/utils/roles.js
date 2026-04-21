@@ -24,11 +24,14 @@ export const ROLE_MENU = {
     { path: '/cuisine', icon: 'fa-fire', label: 'Cuisine' },
     { path: '/commandes', icon: 'fa-shopping-cart', label: 'File commandes' },
   ],
+<<<<<<< HEAD
   serveur: [
     { path: '/dashboard', icon: 'fa-chart-line', label: 'Dashboard' },
     { path: '/serveur', icon: 'fa-concierge-bell', label: 'Salle' },
     { path: '/commandes', icon: 'fa-shopping-cart', label: 'Mes commandes' },
   ],
+=======
+>>>>>>> c22961cdc564de1d53b8f1381e1d373448e90275
   livreur: [
     { path: '/dashboard', icon: 'fa-chart-line', label: 'Dashboard' },
     { path: '/livreur', icon: 'fa-motorcycle', label: 'Tournées' },

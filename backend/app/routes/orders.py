@@ -58,7 +58,11 @@ def patch_status(
     body: CommandeStatutMiseAJour,
     role: str = Depends(get_current_role),
 ):
+<<<<<<< HEAD
     if role not in ("admin", "caissier", "cuisinier", "serveur"):
+=======
+    if role not in ("admin", "caissier", "cuisinier"):
+>>>>>>> c22961cdc564de1d53b8f1381e1d373448e90275
         raise HTTPException(status_code=403, detail="Permission refusée")
     try:
         ok = order_service.update_order_status(order_id, body.etat_commande)

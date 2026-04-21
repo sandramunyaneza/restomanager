@@ -18,11 +18,17 @@ def _roles_subset() -> dict[str, Set[str]]:
             Role.ADMIN.value,
             Role.CAISSIER.value,
             Role.CUISINIER.value,
+<<<<<<< HEAD
             Role.SERVEUR.value,
         },
         "cashier": {Role.ADMIN.value, Role.CAISSIER.value},
         "kitchen": {Role.ADMIN.value, Role.CUISINIER.value},
         "server": {Role.ADMIN.value, Role.SERVEUR.value},
+=======
+        },
+        "cashier": {Role.ADMIN.value, Role.CAISSIER.value},
+        "kitchen": {Role.ADMIN.value, Role.CUISINIER.value},
+>>>>>>> c22961cdc564de1d53b8f1381e1d373448e90275
         "delivery": {Role.ADMIN.value, Role.LIVREUR.value},
         "warehouse": {Role.ADMIN.value, Role.MAGASINIER.value},
         "reports": {Role.ADMIN.value, Role.CAISSIER.value},

@@ -13,6 +13,12 @@ class RegisterRequest(BaseModel):
     mot_de_passe: str = Field(min_length=6)
     nom_complet: str
     numero_telephone: Optional[str] = None
+<<<<<<< HEAD
+=======
+    profil: str = Field(
+        description="Rôle demandé (client, cuisinier, livreur, caissier, magasinier)."
+    )
+>>>>>>> c22961cdc564de1d53b8f1381e1d373448e90275
 
 
 class UserPublic(BaseModel):

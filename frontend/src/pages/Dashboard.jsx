@@ -223,6 +223,7 @@ const Dashboard = () => {
           </>
         );
 
+<<<<<<< HEAD
       case 'serveur':
         return (
           <>
@@ -244,6 +245,8 @@ const Dashboard = () => {
           </>
         );
 
+=======
+>>>>>>> c22961cdc564de1d53b8f1381e1d373448e90275
       case 'client':
         return (
           <>
