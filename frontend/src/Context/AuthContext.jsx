@@ -1,53 +1,100 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import * as authService from '../services/authService';
+import { TOKEN_KEY } from '../services/api';
 
-const AuthContext = createContext();
+const AuthContext = createContext(null);
 
 export const useAuth = () => useContext(AuthContext);
+
+/** Adapte la réponse API (libellés français) vers l’état UI (rôle + nom affichables). */
+function normalizeUser(apiUser) {
+  if (!apiUser) return null;
+  const profil = apiUser.profil;
+  return {
+    id: apiUser.id,
+    courriel: apiUser.courriel,
+    email: apiUser.courriel,
+    full_name: apiUser.nom_complet,
+    nom: apiUser.nom_complet,
+    numero_telephone: apiUser.numero_telephone,
+    phone: apiUser.numero_telephone,
+    profil,
+    role: profil,
+  };
+}
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
+  const bootstrap = useCallback(async () => {
+    const token = localStorage.getItem(TOKEN_KEY);
+    const stored = localStorage.getItem('user');
+    if (!token) {
+      if (stored) {
+        setUser(JSON.parse(stored));
+      }
+      setLoading(false);
+      return;
     }
-    setLoading(false);
+    try {
+      const me = await authService.fetchMe();
+      const u = normalizeUser(me);
+      setUser(u);
+      localStorage.setItem('user', JSON.stringify(u));
+    } catch {
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem('user');
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const login = (email, password) => {
-    // Simulation d'authentification
-    const users = {
-      'admin@resto.com': { id: 1, nom: 'Admin User', email: 'admin@resto.com', role: 'admin', password: 'admin123' },
-      'serveur@resto.com': { id: 2, nom: 'Marie Martin', email: 'serveur@resto.com', role: 'serveur', password: 'serveur123' },
-      'cuisinier@resto.com': { id: 3, nom: 'Pierre Durand', email: 'cuisinier@resto.com', role: 'cuisinier', password: 'cuisinier123' },
-      'client@resto.com': { id: 4, nom: 'Jean Dupont', email: 'client@resto.com', role: 'client', password: 'client123' }
-    };
+  useEffect(() => {
+    bootstrap();
+  }, [bootstrap]);
 
-    const foundUser = Object.values(users).find(u => u.email === email && u.password === password);
-    
-    if (foundUser) {
-      const { password, ...userWithoutPassword } = foundUser;
-      setUser(userWithoutPassword);
-      localStorage.setItem('user', JSON.stringify(userWithoutPassword));
+  const login = async (courriel, motDePasse) => {
+    try {
+      const data = await authService.loginRequest(courriel, motDePasse);
+      localStorage.setItem(TOKEN_KEY, data.jeton_acces);
+      const u = normalizeUser(data.utilisateur);
+      setUser(u);
+      localStorage.setItem('user', JSON.stringify(u));
       navigate('/dashboard');
-      return true;
+      return { ok: true };
+    } catch (error) {
+      const status = error?.response?.status;
+      if (!status) {
+        return { ok: false, message: "API backend indisponible (serveur non lancé ou URL incorrecte)." };
+      }
+      if (status === 401) {
+        return { ok: false, message: "Identifiants invalides." };
+      }
+      return { ok: false, message: error?.response?.data?.detail || "Erreur serveur pendant la connexion." };
     }
-    return false;
   };
 
   const logout = () => {
     setUser(null);
+    localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem('user');
     navigate('/login');
   };
 
-  return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
-      {children}
-    </AuthContext.Provider>
+  const value = useMemo(
+    () => ({
+      user,
+      loading,
+      login,
+      logout,
+      refresh: bootstrap,
+    }),
+    [user, loading, bootstrap]
   );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

@@ -1,35 +1,64 @@
-import React, { useState } from 'react';
-import { useAuth } from '../Context/AuthContext';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useAuth } from '../context/AuthContext';
 import DataTable from '../components/Common/DataTable';
 import Modal from '../components/Common/Modal';
-import { mockData } from '../Data/mockData';
+import * as reservationsService from '../services/reservationsService';
 
 const Reservations = () => {
   const { user } = useAuth();
-  const [reservations, setReservations] = useState(mockData.reservations);
+  const [reservations, setReservations] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [formData, setFormData] = useState({ client: '', date: '', heure: '', personnes: '' });
+  const [formData, setFormData] = useState({ date: '', heure: '', personnes: '', table: '', remarques: '' });
 
-  const filteredReservations = user?.role === 'client' 
-    ? reservations.filter(r => r.client === user.nom)
-    : reservations;
-
-  const handleAddReservation = () => {
-    const newReservation = {
-      id: reservations.length + 1,
-      ...formData,
-      personnes: parseInt(formData.personnes),
-      table: 'T' + (Math.floor(Math.random() * 20) + 1),
-      statut: 'confirmée'
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const rows = await reservationsService.fetchReservations();
+        if (!alive) return;
+        setReservations(rows);
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
+    return () => {
+      alive = false;
     };
-    setReservations([...reservations, newReservation]);
+  }, []);
+
+  const tableRows = useMemo(
+    () =>
+      reservations.map((r) => ({
+        id: r.id,
+        client: r.id_utilisateur ? `Client #${r.id_utilisateur}` : '',
+        date: String(r.horaire_reservation).slice(0, 10),
+        heure: String(r.horaire_reservation).slice(11, 16),
+        personnes: r.nombre_convives,
+        table: r.designation_table,
+        statut: r.etat_reservation,
+      })),
+    [reservations]
+  );
+
+  const handleAddReservation = async () => {
+    const horaire = `${formData.date} ${formData.heure}:00`;
+    const payload = {
+      horaire_reservation: horaire,
+      nombre_convives: Number(formData.personnes || 1),
+      designation_table: formData.table || null,
+      remarques_client: formData.remarques || null,
+    };
+    const created = await reservationsService.createReservation(payload);
+    setReservations((prev) => [created, ...prev]);
     setIsModalOpen(false);
-    setFormData({ client: '', date: '', heure: '', personnes: '' });
+    setFormData({ date: '', heure: '', personnes: '', table: '', remarques: '' });
   };
 
   const handleDeleteReservation = (reservation) => {
     if (window.confirm('Annuler cette réservation ?')) {
-      setReservations(reservations.filter(r => r.id !== reservation.id));
+      // Endpoint DELETE non implémenté : suppression UI uniquement pour l’instant.
+      setReservations(reservations.filter((r) => r.id !== reservation.id));
     }
   };
 
@@ -52,17 +81,13 @@ const Reservations = () => {
           { key: 'table', label: 'Table' },
           { key: 'statut', label: 'Statut' }
         ]}
-        data={filteredReservations}
+        data={tableRows}
         actions={[
           { label: 'Annuler', icon: 'fa-trash', className: 'btn-danger', onClick: handleDeleteReservation }
         ]}
       />
 
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Nouvelle réservation">
-        <div className="form-group">
-          <label>Client</label>
-          <input type="text" value={formData.client} onChange={(e) => setFormData({ ...formData, client: e.target.value })} />
-        </div>
         <div className="form-group">
           <label>Date</label>
           <input type="date" value={formData.date} onChange={(e) => setFormData({ ...formData, date: e.target.value })} />
@@ -75,7 +100,17 @@ const Reservations = () => {
           <label>Personnes</label>
           <input type="number" value={formData.personnes} onChange={(e) => setFormData({ ...formData, personnes: e.target.value })} />
         </div>
-        <button className="btn-primary" onClick={handleAddReservation}>Créer réservation</button>
+        <div className="form-group">
+          <label>Table (optionnel)</label>
+          <input type="text" value={formData.table} onChange={(e) => setFormData({ ...formData, table: e.target.value })} />
+        </div>
+        <div className="form-group">
+          <label>Remarques (optionnel)</label>
+          <textarea value={formData.remarques} onChange={(e) => setFormData({ ...formData, remarques: e.target.value })} />
+        </div>
+        <button className="btn-primary" onClick={handleAddReservation} disabled={loading}>
+          Créer réservation
+        </button>
       </Modal>
     </div>
   );

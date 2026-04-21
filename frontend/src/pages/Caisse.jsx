@@ -1,17 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../Context/AuthContext';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useAuth } from '../context/AuthContext';
 import DataTable from '../components/Common/DataTable';
 import Modal from '../components/Common/Modal';
-import { mockData } from '../Data/mockData';
+import * as ordersService from '../services/ordersService';
+import * as paymentsService from '../services/paymentsService';
 
 const Caisse = () => {
   const { user } = useAuth();
-  const [commandes, setCommandes] = useState(mockData.commandes);
-  const [factures, setFactures] = useState(mockData.factures);
-  const [paiements, setPaiements] = useState(mockData.paiements);
+  const [commandes, setCommandes] = useState([]);
+  const [paiements, setPaiements] = useState([]);
   const [selectedCommande, setSelectedCommande] = useState(null);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('Carte bancaire');
+  const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     totalCA: 0,
     totalPaye: 0,
@@ -20,19 +21,32 @@ const Caisse = () => {
   });
 
   useEffect(() => {
-    // Calcul des statistiques de caisse
-    const totalCA = commandes.reduce((sum, cmd) => sum + cmd.montantTotal, 0);
-    const totalPaye = factures.filter(f => f.paye).reduce((sum, f) => sum + f.montantTTC, 0);
-    const totalImpaye = commandes.filter(c => !c.paye && c.statutCommande === 'livree').reduce((sum, c) => sum + c.montantTotal, 0);
-    const transactionsJour = paiements.filter(p => p.date.startsWith(new Date().toISOString().split('T')[0])).length;
+    let alive = true;
+    (async () => {
+      try {
+        const [orders, pays] = await Promise.all([ordersService.fetchOrders(), paymentsService.fetchPayments()]);
+        if (!alive) return;
+        setCommandes(orders);
+        setPaiements(pays);
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
 
-    setStats({
-      totalCA,
-      totalPaye,
-      totalImpaye,
-      transactionsJour
-    });
-  }, [commandes, factures, paiements]);
+  useEffect(() => {
+    const totalCA = commandes.reduce((sum, cmd) => sum + Number(cmd.montant_total || 0), 0);
+    const totalPaye = paiements.reduce((sum, p) => sum + Number(p.montant || 0), 0);
+    const totalImpaye = commandes
+      .filter((c) => c.etat_commande === 'livree' && c.statut_reglement !== 'payee')
+      .reduce((sum, c) => sum + Number(c.montant_total || 0), 0);
+    const today = new Date().toISOString().slice(0, 10);
+    const transactionsJour = paiements.filter((p) => String(p.cree_le).startsWith(today)).length;
+    setStats({ totalCA, totalPaye, totalImpaye, transactionsJour });
+  }, [commandes, paiements]);
 
   const handlePayment = (commande) => {
     setSelectedCommande(commande);
@@ -41,43 +55,32 @@ const Caisse = () => {
 
   const processPayment = () => {
     if (!selectedCommande) return;
-
-    // Mettre à jour le statut de paiement de la commande
-    const updatedCommandes = commandes.map(cmd => 
-      cmd.id === selectedCommande.id ? { ...cmd, paye: true } : cmd
-    );
-    setCommandes(updatedCommandes);
-
-    // Créer la facture
-    const montantHT = selectedCommande.montantTotal / 1.2;
-    const tva = selectedCommande.montantTotal - montantHT;
-    const newFacture = {
-      numero: `F${new Date().getFullYear()}${String(factures.length + 1).padStart(4, '0')}`,
-      date: new Date().toISOString().split('T')[0],
-      client: selectedCommande.client,
-      montantHT: montantHT.toFixed(2),
-      tva: tva.toFixed(2),
-      montantTTC: selectedCommande.montantTotal,
-      paye: true,
-      modePaiement: paymentMethod
-    };
-    setFactures([...factures, newFacture]);
-
-    // Enregistrer le paiement
-    const newPaiement = {
-      id: paiements.length + 1,
-      commandeId: selectedCommande.id,
-      montant: selectedCommande.montantTotal,
-      mode: paymentMethod,
-      date: new Date().toLocaleString(),
-      statut: 'validé',
-      encaissePar: user.nom
-    };
-    setPaiements([...paiements, newPaiement]);
-
-    setIsPaymentModalOpen(false);
-    setSelectedCommande(null);
-    showNotification(`Paiement de ${selectedCommande.montantTotal}€ encaissé avec succès !`);
+    (async () => {
+      try {
+        const mode =
+          paymentMethod === 'Espèces'
+            ? 'especes'
+            : paymentMethod === 'Ticket restaurant'
+              ? 'ticket'
+              : paymentMethod === 'Virement'
+                ? 'virement'
+                : 'carte';
+        await paymentsService.createPayment({
+          id_commande: selectedCommande.id,
+          montant: Number(selectedCommande.montantTotal),
+          mode_reglement: mode,
+        });
+        const [orders, pays] = await Promise.all([ordersService.fetchOrders(), paymentsService.fetchPayments()]);
+        setCommandes(orders);
+        setPaiements(pays);
+        setIsPaymentModalOpen(false);
+        setSelectedCommande(null);
+        showNotification(`Paiement de ${selectedCommande.montantTotal}€ encaissé avec succès !`);
+      } catch (e) {
+        console.warn('Payment failed', e);
+        showNotification("Impossible d'encaisser (permissions ou API indisponible).");
+      }
+    })();
   };
 
   const showNotification = (msg) => {
@@ -126,11 +129,50 @@ const Caisse = () => {
     `);
   };
 
-  // Commandes à encaisser (livrées mais non payées)
-  const commandesAEncaisser = commandes.filter(cmd => cmd.statutCommande === 'livree' && !cmd.paye);
-  
-  // Commandes payées
-  const commandesPayees = commandes.filter(cmd => cmd.paye);
+  const commandesAEncaisser = useMemo(
+    () =>
+      commandes
+        .filter((cmd) => cmd.etat_commande === 'livree' && cmd.statut_reglement !== 'payee')
+        .map((cmd) => ({
+          id: cmd.id,
+          client: `Client #${cmd.id_client}`,
+          dateheure: cmd.cree_le,
+          montantTotal: Number(cmd.montant_total),
+        })),
+    [commandes]
+  );
+
+  const commandesPayees = useMemo(
+    () =>
+      commandes
+        .filter((cmd) => cmd.statut_reglement === 'payee')
+        .map((cmd) => ({
+          id: cmd.id,
+          client: `Client #${cmd.id_client}`,
+          dateheure: cmd.cree_le,
+          montantTotal: Number(cmd.montant_total),
+        })),
+    [commandes]
+  );
+
+  const factures = useMemo(() => {
+    // Pas de table "factures" côté backend : on dérive une “facture” depuis chaque paiement.
+    return paiements.map((p) => {
+      const ttc = Number(p.montant);
+      const ht = ttc / 1.2;
+      const tva = ttc - ht;
+      return {
+        numero: `PAY-${p.id}`,
+        date: String(p.cree_le).slice(0, 10),
+        client: p.id_commande ? `Commande #${p.id_commande}` : '',
+        montantHT: ht.toFixed(2),
+        tva: tva.toFixed(2),
+        montantTTC: ttc,
+        paye: true,
+        modePaiement: p.mode_reglement,
+      };
+    });
+  }, [paiements]);
 
   return (
     <div>
@@ -235,7 +277,7 @@ const Caisse = () => {
               </select>
             </div>
             <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
-              <button className="btn-primary" onClick={processPayment} style={{ flex: 1 }}>
+              <button className="btn-primary" onClick={processPayment} style={{ flex: 1 }} disabled={loading}>
                 <i className="fas fa-check"></i> Valider le paiement
               </button>
               <button className="btn-secondary" onClick={() => setIsPaymentModalOpen(false)} style={{ flex: 1 }}>
