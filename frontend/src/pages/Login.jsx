@@ -1,17 +1,20 @@
 import React, { useState } from 'react';
-import { useAuth } from '../Context/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const { login } = useAuth();
+  const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const success = login(email, password);
-    if (!success) {
-      setError('Email ou mot de passe incorrect');
+    setError('');
+    const result = await login(email, password);
+    if (!result?.ok) {
+      setError(result?.message || 'Connexion impossible.');
     }
   };
 
@@ -46,13 +49,21 @@ const Login = () => {
             Se connecter
           </button>
         </form>
+        <div style={{ marginTop: '12px' }}>
+          <button
+            type="button"
+            className="btn-secondary"
+            style={{ width: '100%' }}
+            onClick={() => navigate('/register')}
+          >
+            Créer un compte
+          </button>
+        </div>
         <div style={{ marginTop: '30px', paddingTop: '20px', borderTop: '1px solid #e0e0e0' }}>
           <p style={{ fontSize: '12px', color: '#666', textAlign: 'center' }}>
-            <strong>Comptes de démonstration:</strong><br />
-            Admin: admin@resto.com / admin123<br />
-            Serveur: serveur@resto.com / serveur123<br />
-            Cuisinier: cuisinier@resto.com / cuisinier123<br />
-            Client: client@resto.com / client123
+            <strong>Comptes de démonstration (mot de passe partout : Password123!) :</strong><br />
+            admin@resto.com · client@resto.com · caissier@resto.com<br />
+            cuisinier@resto.com · livreur@resto.com · magasinier@resto.com · serveur@resto.com
           </p>
         </div>
       </div>

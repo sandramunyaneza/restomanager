@@ -1,29 +1,65 @@
-import React, { useState } from 'react';
-import { useAuth } from '../Context/AuthContext';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useAuth } from '../context/AuthContext';
 import DataTable from '../components/Common/DataTable';
 import Modal from '../components/Common/Modal';
-import { mockData } from '../Data/mockData';
+import * as productsService from '../services/productsService';
 
 const Menu = () => {
   const { user } = useAuth();
-  const [plats, setPlats] = useState(mockData.plats);
+  const [plats, setPlats] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({ nom: '', description: '', prix: '', categorie: 'Plat principal' });
 
-  const handleAddPlat = () => {
-    const newPlat = {
-      id: plats.length + 1,
-      ...formData,
-      prix: parseFloat(formData.prix)
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const rows = await productsService.fetchProducts();
+        if (!alive) return;
+        setPlats(rows);
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
+    return () => {
+      alive = false;
     };
-    setPlats([...plats, newPlat]);
+  }, []);
+
+  const tableRows = useMemo(
+    () =>
+      plats.map((p) => ({
+        id: p.id,
+        nom: p.nom_produit,
+        description: p.description_detaillee,
+        prix: Number(p.prix_tarif),
+        categorie: p.id_categorie ? `Catégorie #${p.id_categorie}` : '',
+        est_disponible: p.est_disponible,
+      })),
+    [plats]
+  );
+
+  const handleAddPlat = async () => {
+    // Côté API: création admin uniquement, nécessite id_categorie.
+    // Ici on ne gère pas le mapping libellé->id, donc on crée par défaut en catégorie 1.
+    const payload = {
+      id_categorie: 1,
+      nom_produit: formData.nom,
+      description_detaillee: formData.description,
+      prix_tarif: Number(formData.prix || 0),
+      est_disponible: true,
+    };
+    const created = await productsService.createProduct(payload);
+    setPlats((prev) => [...prev, created]);
     setIsModalOpen(false);
     setFormData({ nom: '', description: '', prix: '', categorie: 'Plat principal' });
   };
 
   const handleDeletePlat = (plat) => {
     if (window.confirm('Supprimer ce plat ?')) {
-      setPlats(plats.filter(p => p.id !== plat.id));
+      // Endpoint DELETE non implémenté côté backend : on retire côté UI uniquement.
+      setPlats(plats.filter((p) => p.id !== plat.id));
     }
   };
 
@@ -46,7 +82,7 @@ const Menu = () => {
           { key: 'prix', label: 'Prix' },
           { key: 'categorie', label: 'Catégorie' }
         ]}
-        data={plats}
+        data={tableRows}
         actions={user?.role === 'admin' ? [
           { label: 'Supprimer', icon: 'fa-trash', className: 'btn-danger', onClick: handleDeletePlat }
         ] : []}
@@ -74,7 +110,9 @@ const Menu = () => {
             <option>Boisson</option>
           </select>
         </div>
-        <button className="btn-primary" onClick={handleAddPlat}>Ajouter plat</button>
+        <button className="btn-primary" onClick={handleAddPlat} disabled={loading}>
+          Ajouter plat
+        </button>
       </Modal>
     </div>
   );

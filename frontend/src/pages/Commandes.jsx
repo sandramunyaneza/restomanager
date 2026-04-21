@@ -1,14 +1,44 @@
-import { useState } from 'react';
-import { useAuth } from '../Context/AuthContext';
+import { useEffect, useMemo, useState } from 'react';
+import { useAuth } from '../context/AuthContext';
 import DataTable from '../components/Common/DataTable';
 import Modal from '../components/Common/Modal';
-import { mockData } from '../Data/mockData';
+import * as ordersService from '../services/ordersService';
 
 const Commandes = () => {
   const { user } = useAuth();
-  const [commandes, setCommandes] = useState(mockData.commandes);
+  const [commandes, setCommandes] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({ client: '', montantTotal: '', statutCommande: 'en cours' });
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const rows = await ordersService.fetchOrders();
+        if (!alive) return;
+        setCommandes(rows);
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const tableRows = useMemo(
+    () =>
+      commandes.map((o) => ({
+        id: o.id,
+        dateheure: o.cree_le,
+        client: o.id_client ? `Client #${o.id_client}` : '',
+        montantTotal: Number(o.montant_total),
+        statutCommande: o.etat_commande,
+        paye: o.statut_reglement === 'payee',
+      })),
+    [commandes]
+  );
 
   const getColumns = () => {
     const baseColumns = [
@@ -19,7 +49,8 @@ const Commandes = () => {
       { key: 'statutCommande', label: 'Statut' }
     ];
     
-    if (user?.role === 'admin' || user?.role === 'serveur') {
+    if (user?.role === 'admin' || user?.role === 'caissier') {
+      // Non exposé directement par l’API à ce stade.
       baseColumns.push({ key: 'cuisinier', label: 'Cuisinier' });
     }
     
@@ -27,35 +58,64 @@ const Commandes = () => {
   };
 
   const handleAddCommande = () => {
+    // L’API de création de commande requiert des "articles" (produits, quantités).
+    // On garde la création locale (démo) tant que l’UI n’a pas de panier.
     const newCommande = {
-      id: commandes.length + 1,
-      dateheure: new Date().toLocaleString(),
+      id: Math.max(0, ...tableRows.map((c) => c.id)) + 1,
+      dateheure: new Date().toISOString(),
       ...formData,
       montantTotal: parseFloat(formData.montantTotal),
-      cuisinier: 'À assigner'
+      cuisinier: 'À assigner',
     };
-    setCommandes([...commandes, newCommande]);
+    setCommandes((prev) => [
+      {
+        id: newCommande.id,
+        id_client: 0,
+        nature_commande: 'sur_place',
+        etat_commande: newCommande.statutCommande,
+        montant_total: newCommande.montantTotal,
+        statut_reglement: newCommande.paye ? 'payee' : 'impayee',
+        cree_le: newCommande.dateheure,
+        remarques_commande: null,
+      },
+      ...prev,
+    ]);
     setIsModalOpen(false);
     setFormData({ client: '', montantTotal: '', statutCommande: 'en cours' });
   };
 
   const handleDeleteCommande = (commande) => {
     if (window.confirm('Supprimer cette commande ?')) {
-      setCommandes(commandes.filter(c => c.id !== commande.id));
+      // Endpoint DELETE non implémenté : suppression UI uniquement.
+      setCommandes(commandes.filter((c) => c.id !== commande.id));
     }
   };
 
   const getActions = () => {
     const actions = [];
-    if (user?.role === 'admin' || user?.role === 'serveur') {
+    if (user?.role === 'admin' || user?.role === 'caissier') {
       actions.push({ label: 'Modifier', icon: 'fa-edit', className: 'btn-secondary', onClick: (row) => console.log('Modifier', row.id) });
       actions.push({ label: 'Supprimer', icon: 'fa-trash', className: 'btn-danger', onClick: handleDeleteCommande });
     }
     if (user?.role === 'cuisinier') {
-      actions.push({ label: 'Préparer', icon: 'fa-utensils', className: 'btn-secondary', onClick: (row) => {
-        const updated = commandes.map(c => c.id === row.id ? { ...c, statutCommande: 'prete' } : c);
-        setCommandes(updated);
-      }});
+      actions.push({
+        label: 'Préparer',
+        icon: 'fa-utensils',
+        className: 'btn-secondary',
+        onClick: (row) => {
+          (async () => {
+            try {
+              await ordersService.updateOrderStatus(row.id, 'prete');
+              const refreshed = await ordersService.fetchOrders();
+              setCommandes(refreshed);
+            } catch {
+              // fallback local
+              const updated = commandes.map((c) => (c.id === row.id ? { ...c, etat_commande: 'prete' } : c));
+              setCommandes(updated);
+            }
+          })();
+        },
+      });
     }
     return actions;
   };
@@ -64,7 +124,7 @@ const Commandes = () => {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
         <h2>Gestion des commandes</h2>
-        {(user?.role === 'admin' || user?.role === 'serveur') && (
+        {(user?.role === 'admin' || user?.role === 'caissier') && (
           <button className="btn-primary" onClick={() => setIsModalOpen(true)}>
             <i className="fas fa-plus"></i> Nouvelle commande
           </button>
@@ -73,7 +133,7 @@ const Commandes = () => {
       
       <DataTable
         columns={getColumns()}
-        data={commandes}
+        data={tableRows}
         actions={getActions()}
       />
 
@@ -94,7 +154,9 @@ const Commandes = () => {
             <option>livree</option>
           </select>
         </div>
-        <button className="btn-primary" onClick={handleAddCommande}>Créer commande</button>
+        <button className="btn-primary" onClick={handleAddCommande} disabled={loading}>
+          Créer commande (démo)
+        </button>
       </Modal>
     </div>
   );
