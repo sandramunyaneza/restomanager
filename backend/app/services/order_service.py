@@ -28,7 +28,6 @@ def create_order(
     acting_user_id: int,
     acting_role: str,
 ) -> int:
-    """Crée une commande et ses lignes."""
     target_user = payload.id_client or acting_user_id
     
     if acting_role == "client" and target_user != acting_user_id:
@@ -101,11 +100,9 @@ def list_orders(user_id: int, role: str) -> List[dict]:
         if role == "serveur":
             return fetch_all(
                 conn,
-                _SQL_LIST + " WHERE serveur_id = %s ORDER BY cree_le DESC",
-                (user_id,),
+                _SQL_LIST + " WHERE etat_commande IN ('prete', 'en_attente', 'confirmee', 'en_cours') ORDER BY cree_le DESC",
             )
         return fetch_all(conn, _SQL_LIST + " ORDER BY cree_le DESC LIMIT 500")
-
 
 def update_order_status(order_id: int, new_status: str, changed_by: int = None) -> bool:
     allowed = {
