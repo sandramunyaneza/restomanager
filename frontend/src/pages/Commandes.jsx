@@ -220,6 +220,14 @@ const Commandes = () => {
         onClick: (row) => handleUpdateStatus(row, 'livree')
       });
     }
+  if (user?.role === 'serveur') {
+      actions.push({
+        label: 'Marquer livrée',
+        icon: 'fa-check-circle',
+        className: 'btn-success',
+        onClick: (row) => handleUpdateStatus(row, 'livree')
+    });
+  }
     
     return actions;
   };

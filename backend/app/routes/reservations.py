@@ -71,7 +71,7 @@ def create_reservation(
 def set_status(
     res_id: int,
     body: ReservationStatutMiseAJour,
-    _role: str = Depends(require_roles("admin", "caissier")),
+    _role: str = Depends(require_roles("admin", "caissier", "serveur")),
 ):
     allowed = {"en_attente", "confirmee", "annulee", "terminee"}
     if body.etat_reservation not in allowed:
