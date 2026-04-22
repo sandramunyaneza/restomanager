@@ -13,7 +13,7 @@ function mapApiOrder(o, userNameById = {}) {
   return {
     id: o.id,
     dateheure: o.cree_le,
-    client: userNameById[o.id_client] || `Client #${o.id_client}`,
+    client: o.client_nom || userNameById[o.id_client] || `Client #${o.id_client}`, 
     montantTotal: Number(o.montant_total),
     statutCommande: o.etat_commande,
     paye: o.statut_reglement === 'payee',

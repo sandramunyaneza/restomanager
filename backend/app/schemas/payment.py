@@ -19,3 +19,4 @@ class PaiementOut(BaseModel):
     etat_transaction: str
     cree_le: datetime
     id_employe_encaissement: Optional[int] = None
+    client_nom: Optional[str] = None

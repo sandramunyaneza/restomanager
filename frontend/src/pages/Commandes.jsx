@@ -50,7 +50,7 @@ const Commandes = () => {
       commandes.map((o) => ({
         id: o.id,
         dateheure: o.cree_le,
-        client: o.id_client ? `Client #${o.id_client}` : '',
+        client: o.client_nom ? `Client #${o.id_client}` : '',
         montantTotal: Number(o.montant_total),
         statutCommande: o.etat_commande,
         paye: o.statut_reglement === 'payee',
@@ -220,6 +220,14 @@ const Commandes = () => {
         onClick: (row) => handleUpdateStatus(row, 'livree')
       });
     }
+  if (user?.role === 'serveur') {
+      actions.push({
+        label: 'Marquer livrée',
+        icon: 'fa-check-circle',
+        className: 'btn-success',
+        onClick: (row) => handleUpdateStatus(row, 'livree')
+    });
+  }
     
     return actions;
   };

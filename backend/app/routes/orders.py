@@ -9,16 +9,18 @@ router = APIRouter(prefix="/orders", tags=["orders"])
 
 _ORDER_ONE = """
 SELECT
-  id,
-  id_client,
-  nature_commande,
-  etat_commande,
-  montant_total,
-  statut_reglement,
-  cree_le,
-  remarques_commande
-FROM commandes
-WHERE id = %s
+  c.id,
+  c.id_client,
+  c.nature_commande,
+  c.etat_commande,
+  c.montant_total,
+  c.statut_reglement,
+  c.cree_le,
+  c.remarques_commande,
+  u.nom_complet AS client_nom
+FROM commandes c
+LEFT JOIN utilisateurs u ON u.id = c.id_client
+WHERE c.id = %s
 """
 
 
@@ -36,6 +38,10 @@ def list_orders(
     role: str = Depends(get_current_role),
 ):
     rows = order_service.list_orders(user_id, role)
+    with get_db() as conn:
+        for row in rows:
+            user = fetch_one(conn, "SELECT nom_complet FROM utilisateurs WHERE id=%s", (row["id_client"],))
+            row["client_nom"] = user["nom_complet"] if user else None
     return [CommandeOut(**r) for r in rows]
 
 
@@ -56,12 +62,13 @@ def create_order_route(
 def patch_status(
     order_id: int,
     body: CommandeStatutMiseAJour,
+    user_id: int = Depends(get_current_user_id),
     role: str = Depends(get_current_role),
 ):
     if role not in ("admin", "caissier", "cuisinier", "serveur"):
         raise HTTPException(status_code=403, detail="Permission refusée")
     try:
-        ok = order_service.update_order_status(order_id, body.etat_commande)
+        ok = order_service.update_order_status(order_id, body.etat_commande, user_id)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
     if not ok:

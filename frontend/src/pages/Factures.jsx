@@ -32,7 +32,7 @@ const Factures = () => {
     return {
       numero: `PAY-${p.id}`,
       date: String(p.cree_le).slice(0, 10),
-      client: p.id_commande ? `Commande #${p.id_commande}` : '',
+      client: p.client_nom || (p.id_commande ? `Commande #${p.id_commande}` : ''),
       montantHT: ht.toFixed(2),
       tva: tva.toFixed(2),
       montantTTC: ttc,

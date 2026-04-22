@@ -29,9 +29,9 @@ const Livraisons = () => {
       livraisons.map((l) => ({
         id: l.id,
         idCommande: l.id_commande,
-        client: l.id_commande ? `Commande #${l.id_commande}` : '',
+        client: l.client_nom || `Commande #${l.id_commande}`,
         adresse: l.adresse_livraison,
-        livreur: l.id_employe_livreur ? `Livreur #${l.id_employe_livreur}` : 'Non assigné',
+        livreur: l.livreur_nom || (l.id_employe_livreur ? `Livreur #${l.id_employe_livreur}` : 'Non assigné'), 
         statut: l.avancement_livraison,
       })),
     [livraisons]

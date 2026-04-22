@@ -414,6 +414,62 @@ body {
     border-color: #667eea;
     background: linear-gradient(135deg, #667eea20, #764ba220);
 }
+/* Styles supplémentaires pour la caisse */
+.btn-success {
+    background: #28a745;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-success:hover {
+    background: #218838;
+    transform: translateY(-2px);
+}
+
+.btn-info {
+    background: #17a2b8;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-info:hover {
+    background: #138496;
+    transform: translateY(-2px);
+}
+
+/* Badge de statut pour les factures */
+.status.paye {
+    background: #a8e6cf;
+    color: #1e7e34;
+}
+
+.status.impaye {
+    background: #ffeaa7;
+    color: #d4a000;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.notification {
+    animation: slideIn 0.3s ease;
+}
 
 /* Impression */
 @media print {

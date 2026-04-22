@@ -9,6 +9,7 @@ class LivraisonOut(BaseModel):
     id_employe_livreur: Optional[int] = None
     adresse_livraison: str
     avancement_livraison: str
+    client_nom: Optional[str] = None
 
 
 class LivraisonMiseAJour(BaseModel):
