@@ -7,7 +7,7 @@ from .payment import PaiementCreate, PaiementOut
 from .product import CategorieOut, ProduitCreate, ProduitOut
 from .report import RapportSynthese
 from .reservation import ReservationCreate, ReservationOut, ReservationStatutMiseAJour
-from .stock import IngredientOut, MouvementStockOut, StockAjustement
+from .stock import IngredientOut, MouvementStockOut, StockAjustement, IngredientCreate, IngredientUpdate
 from .serveur import ServeurCommandeCreate, ServeurCommandeOut, TableRestaurantOut, TableStatutUpdate
 from .user import UserCreate, UserOut
 
@@ -37,6 +37,8 @@ __all__ = [
     "IngredientOut",
     "StockAjustement",
     "MouvementStockOut",
+    "IngredientCreate",
+    "IngredientUpdate",
     "ServeurCommandeCreate",
     "ServeurCommandeOut",
     "TableRestaurantOut",
