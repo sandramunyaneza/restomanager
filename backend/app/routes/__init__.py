@@ -1,9 +1,18 @@
-<<<<<<< HEAD
-from . import auth, client, commande, cuisine, deliveries, livraison, orders, paiement, payments, products, reports, reservations, serveur, stock, users
+from . import auth
+from . import client
+from . import cuisine
+from . import deliveries
+from . import orders
+from . import payments
+from . import products
+from . import reports
+from . import reservations
+from . import serveur
+from . import stock
+from . import users
 
-__all__ = ["auth", "client", "commande", "cuisine", "deliveries", "livraison", "orders", "paiement", "payments", "products", "reports", "reservations", "serveur", "stock", "users"]
-=======
-from . import auth, deliveries, orders, payments, products, reports, reservations, stock, users
-
-__all__ = ["auth", "deliveries", "orders", "payments", "products", "reports", "reservations", "stock", "users"]
->>>>>>> c22961cdc564de1d53b8f1381e1d373448e90275
+__all__ = [
+    "auth", "client", "cuisine", "deliveries", "orders",
+    "payments", "products", "reports", "reservations",
+    "serveur", "stock", "users"
+]

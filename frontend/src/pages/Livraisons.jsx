@@ -37,18 +37,67 @@ const Livraisons = () => {
     [livraisons]
   );
 
-  const handleUpdateLivraison = (livraison) => {
-    // Exemple de mise à jour : passer à "en_cours" si admin/livreur.
-    (async () => {
-      try {
-        await deliveriesService.updateDelivery(livraison.id, { avancement_livraison: 'en_cours' });
-        const refreshed = await deliveriesService.fetchDeliveries();
-        setLivraisons(refreshed);
-      } catch (e) {
-        console.warn('Update livraison failed', e);
+  const handleUpdateLivraison = (livraison, newStatus = null) => {
+  (async () => {
+    try {
+      // Définir le prochain statut selon le statut actuel
+      let nextStatus = newStatus;
+      if (!nextStatus) {
+        const statusFlow = {
+          'en_attente': 'en_preparation',
+          'en_preparation': 'en_route',
+          'en_route': 'livree',
+        };
+        nextStatus = statusFlow[livraison.avancement_livraison] || 'livree';
       }
-    })();
-  };
+      
+      // Vérifier que le statut est valide
+      const validStatuses = ['en_attente', 'en_preparation', 'en_route', 'livree', 'annulee'];
+      if (!validStatuses.includes(nextStatus)) {
+        console.error('Statut invalide:', nextStatus);
+        return;
+      }
+      
+      await deliveriesService.updateDelivery(livraison.id, { avancement_livraison: nextStatus });
+      const refreshed = await deliveriesService.fetchDeliveries();
+      setLivraisons(refreshed);
+    } catch (e) {
+      console.warn('Update livraison failed', e);
+      alert('Erreur lors de la mise à jour de la livraison');
+    }
+  })();
+};
+
+const getActionsForLivraison = (livraison) => {
+  const actions = [];
+  
+  if (livraison.avancement_livraison === 'en_attente') {
+    actions.push({ 
+      label: 'Préparer', 
+      icon: 'fa-box', 
+      className: 'btn-secondary',
+      onClick: () => handleUpdateLivraison(livraison, 'en_preparation')
+    });
+  }
+  if (livraison.avancement_livraison === 'en_preparation') {
+    actions.push({ 
+      label: 'Envoyer en route', 
+      icon: 'fa-truck', 
+      className: 'btn-primary',
+      onClick: () => handleUpdateLivraison(livraison, 'en_route')
+    });
+  }
+  if (livraison.avancement_livraison === 'en_route') {
+    actions.push({ 
+      label: 'Marquer livrée', 
+      icon: 'fa-check-circle', 
+      className: 'btn-success',
+      onClick: () => handleUpdateLivraison(livraison, 'livree')
+    });
+  }
+  
+  return actions;
+};
 
   return (
     <div>
@@ -67,12 +116,23 @@ const Livraisons = () => {
           { key: 'client', label: 'Client' },
           { key: 'adresse', label: 'Adresse' },
           { key: 'livreur', label: 'Livreur' },
-          { key: 'statut', label: 'Statut' }
+          { 
+            key: 'statut', 
+            label: 'Statut',
+            render: (row) => {
+              const statusLabels = {
+                'en_attente': '⏳ En attente',
+                'en_preparation': '📦 En préparation',
+                'en_route': '🚚 En route',
+                'livree': '✅ Livrée',
+                'annulee': '❌ Annulée'
+              };
+              return statusLabels[row.statut] || row.statut;
+            }
+          }
         ]}
         data={tableRows}
-        actions={[
-          { label: 'Mettre à jour', icon: 'fa-sync', className: 'btn-primary', onClick: handleUpdateLivraison }
-        ]}
+        actions={getActionsForLivraison}
       />
     </div>
   );

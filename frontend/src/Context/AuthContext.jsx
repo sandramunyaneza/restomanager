@@ -59,7 +59,6 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (courriel, motDePasse) => {
     try {
-<<<<<<< HEAD
       let data;
       try {
         data = await authService.loginRequest(courriel, motDePasse);
@@ -70,9 +69,6 @@ export const AuthProvider = ({ children }) => {
         // Fallback intelligent: tente l'authentification dédiée client.
         data = await authService.clientLoginRequest(courriel, motDePasse);
       }
-=======
-      const data = await authService.loginRequest(courriel, motDePasse);
->>>>>>> c22961cdc564de1d53b8f1381e1d373448e90275
       localStorage.setItem(TOKEN_KEY, data.jeton_acces);
       const u = normalizeUser(data.utilisateur);
       setUser(u);
