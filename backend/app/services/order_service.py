@@ -1,7 +1,7 @@
 from decimal import Decimal
-from typing import List
+from typing import List, Optional
 
-from app.database import execute, fetch_all, get_db, last_insert_id
+from app.database import execute, fetch_all, fetch_one, get_db, last_insert_id
 from app.schemas import CommandeCreate, LigneCommandeEntree
 
 
@@ -28,48 +28,53 @@ def create_order(
     acting_user_id: int,
     acting_role: str,
 ) -> int:
-    """Crée une commande et ses lignes. Le client ne peut commander que pour lui-même."""
+    """Crée une commande et ses lignes."""
     target_user = payload.id_client or acting_user_id
+    
     if acting_role == "client" and target_user != acting_user_id:
         raise PermissionError("Vous ne pouvez pas créer de commande pour un autre client")
-<<<<<<< HEAD
     if acting_role == "serveur" and payload.nature_commande != "sur_place":
         raise PermissionError("Le serveur ne peut créer que des commandes sur place")
-=======
->>>>>>> c22961cdc564de1d53b8f1381e1d373448e90275
+
+    if acting_role == "serveur":
+        type_commande = "sur_place"
+    elif payload.nature_commande == "emporter":
+        type_commande = "emporter"
+    elif payload.nature_commande == "livraison":
+        type_commande = "livraison"
+    else:
+        type_commande = "sur_place"
 
     total = _sum_items(payload.articles)
+    serveur_id = acting_user_id if acting_role == "serveur" else None
+    
     with get_db() as conn:
+        for line in payload.articles:
+            product = fetch_one(conn, "SELECT id FROM produits WHERE id=%s", (line.id_produit,))
+            if not product:
+                raise ValueError(f"Produit {line.id_produit} introuvable")
+
         execute(
             conn,
             """
             INSERT INTO commandes (
-<<<<<<< HEAD
               id_client, id_employe_creation, serveur_id, type_commande, nature_commande,
               statut_cuisine, etat_commande, montant_total, statut_reglement, remarques_commande
             )
             VALUES (%s, %s, %s, %s, %s, 'a_envoyer', 'en_attente', %s, 'non_payee', %s)
-=======
-              id_client, id_employe_creation, nature_commande,
-              etat_commande, montant_total, statut_reglement, remarques_commande
-            )
-            VALUES (%s, %s, %s, 'en_attente', %s, 'non_payee', %s)
->>>>>>> c22961cdc564de1d53b8f1381e1d373448e90275
             """,
             (
                 target_user,
                 acting_user_id if acting_role != "client" else None,
-<<<<<<< HEAD
-                acting_user_id if acting_role == "serveur" else None,
-                payload.nature_commande,
-=======
->>>>>>> c22961cdc564de1d53b8f1381e1d373448e90275
+                serveur_id,
+                type_commande,
                 payload.nature_commande,
                 str(total),
                 payload.remarques_commande,
             ),
         )
         oid = last_insert_id(conn)
+        
         for line in payload.articles:
             execute(
                 conn,
@@ -81,6 +86,7 @@ def create_order(
                 """,
                 (oid, line.id_produit, line.quantite, str(line.prix_unitaire)),
             )
+        
     return oid
 
 
@@ -92,29 +98,23 @@ def list_orders(user_id: int, role: str) -> List[dict]:
                 _SQL_LIST + " WHERE id_client = %s ORDER BY cree_le DESC",
                 (user_id,),
             )
-<<<<<<< HEAD
         if role == "serveur":
             return fetch_all(
                 conn,
                 _SQL_LIST + " WHERE serveur_id = %s ORDER BY cree_le DESC",
                 (user_id,),
             )
-=======
->>>>>>> c22961cdc564de1d53b8f1381e1d373448e90275
         return fetch_all(conn, _SQL_LIST + " ORDER BY cree_le DESC LIMIT 500")
 
 
-def update_order_status(order_id: int, new_status: str) -> bool:
+def update_order_status(order_id: int, new_status: str, changed_by: int = None) -> bool:
     allowed = {
-        "en_attente",
-        "confirmee",
-        "en_cours",
-        "prete",
-        "livree",
-        "annulee",
+        "en_attente", "confirmee", "en_cours",
+        "prete", "livree", "annulee",
     }
     if new_status not in allowed:
         raise ValueError("Statut invalide")
+    
     with get_db() as conn:
         n = execute(
             conn,

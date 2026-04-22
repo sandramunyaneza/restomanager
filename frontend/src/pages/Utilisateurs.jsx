@@ -17,8 +17,14 @@ const Utilisateurs = () => {
     motDePasse: 'Password123!',
   });
 
+  // ✅ CORRECTION : Condition APRÈS tous les hooks
   if (user?.role !== 'admin') {
-    return <div>Accès non autorisé</div>;
+    return (
+      <div style={{ padding: '40px', textAlign: 'center' }}>
+        <h2>⛔ Accès non autorisé</h2>
+        <p>Vous n'avez pas les droits pour accéder à cette page.</p>
+      </div>
+    );
   }
 
   useEffect(() => {
@@ -36,6 +42,7 @@ const Utilisateurs = () => {
       alive = false;
     };
   }, []);
+
 
   const tableRows = useMemo(
     () =>
@@ -123,6 +130,7 @@ const Utilisateurs = () => {
             <option value="cuisinier">cuisinier</option>
             <option value="livreur">livreur</option>
             <option value="magasinier">magasinier</option>
+            <option value="serveur">serveur</option>
             <option value="admin">admin</option>
           </select>
         </div>

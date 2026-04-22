@@ -17,10 +17,7 @@ import CuisineHome from '../pages/spaces/CuisineHome';
 import LivreurHome from '../pages/spaces/LivreurHome';
 import MagasinierHome from '../pages/spaces/MagasinierHome';
 import ClientHome from '../pages/spaces/ClientHome';
-<<<<<<< HEAD
 import ServeurHome from '../pages/spaces/ServeurHome';
-=======
->>>>>>> c22961cdc564de1d53b8f1381e1d373448e90275
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -90,7 +87,6 @@ export default function AppRoutes() {
         <Route path="livreur" element={<LivreurHome />} />
         <Route path="magasin" element={<MagasinierHome />} />
         <Route path="client" element={<ClientHome />} />
-<<<<<<< HEAD
         <Route
           path="serveur"
           element={
@@ -99,8 +95,6 @@ export default function AppRoutes() {
             </RoleRoute>
           }
         />
-=======
->>>>>>> c22961cdc564de1d53b8f1381e1d373448e90275
       </Route>
     </Routes>
   );

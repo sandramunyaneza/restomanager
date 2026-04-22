@@ -8,12 +8,8 @@ INSERT INTO utilisateurs (courriel, mot_de_passe_chiffre, nom_complet, numero_te
 ('caissier@resto.com', '$2b$12$K09C/JiJTjK.OSf0gbSNNu7cn41vVuhz.spNSquAq6gjViV8oHnj2', 'Marie Caisse', '0600000003', 'caissier', 1),
 ('cuisinier@resto.com', '$2b$12$K09C/JiJTjK.OSf0gbSNNu7cn41vVuhz.spNSquAq6gjViV8oHnj2', 'Pierre Cuisine', '0600000004', 'cuisinier', 1),
 ('livreur@resto.com', '$2b$12$K09C/JiJTjK.OSf0gbSNNu7cn41vVuhz.spNSquAq6gjViV8oHnj2', 'Paul Livreur', '0600000005', 'livreur', 1),
-<<<<<<< HEAD
 ('magasinier@resto.com', '$2b$12$K09C/JiJTjK.OSf0gbSNNu7cn41vVuhz.spNSquAq6gjViV8oHnj2', 'Sophie Stock', '0600000006', 'magasinier', 1),
 ('serveur@resto.com', '$2b$12$K09C/JiJTjK.OSf0gbSNNu7cn41vVuhz.spNSquAq6gjViV8oHnj2', 'Samuel Salle', '0600000007', 'serveur', 1);
-=======
-('magasinier@resto.com', '$2b$12$K09C/JiJTjK.OSf0gbSNNu7cn41vVuhz.spNSquAq6gjViV8oHnj2', 'Sophie Stock', '0600000006', 'magasinier', 1);
->>>>>>> c22961cdc564de1d53b8f1381e1d373448e90275
 
 INSERT INTO categories_menu (libelle, ordre_tri) VALUES
 ('Entrées', 1),
@@ -30,28 +26,20 @@ INSERT INTO ingredients (libelle_ingredient, unite_mesure, quantite_en_stock, qu
 ('Mozzarella', 'kg', 2.000, 5.000),
 ('Farine', 'kg', 25.000, 10.000);
 
-<<<<<<< HEAD
 INSERT INTO tables_restaurant (numero_table, capacite, statut) VALUES
 ('T1', 2, 'libre'),
 ('T2', 4, 'occupee'),
 ('T3', 6, 'libre');
 
-=======
->>>>>>> c22961cdc564de1d53b8f1381e1d373448e90275
 -- id_utilisateur 2 = client@resto.com
 INSERT INTO reservations (id_utilisateur, horaire_reservation, nombre_convives, etat_reservation, designation_table) VALUES
 (2, DATE_ADD(NOW(), INTERVAL 1 DAY), 4, 'confirmee', 'T12');
 
-<<<<<<< HEAD
 INSERT INTO commandes (
   id_client, id_employe_creation, serveur_id, table_id, type_commande, nature_commande,
   statut_cuisine, heure_envoi_cuisine, etat_commande, montant_total, statut_reglement, remarques_commande
 ) VALUES
 (2, 3, NULL, NULL, 'livraison', 'livraison', 'en_preparation', NOW(), 'en_cours', 45.50, 'non_payee', 'Exemple livraison');
-=======
-INSERT INTO commandes (id_client, nature_commande, etat_commande, montant_total, statut_reglement, remarques_commande) VALUES
-(2, 'livraison', 'en_cours', 45.50, 'non_payee', 'Exemple livraison');
->>>>>>> c22961cdc564de1d53b8f1381e1d373448e90275
 
 SET @oid := LAST_INSERT_ID();
 

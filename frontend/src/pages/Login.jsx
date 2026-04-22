@@ -1,8 +1,5 @@
 import React, { useState } from 'react';
-<<<<<<< HEAD
 import { useNavigate } from 'react-router-dom';
-=======
->>>>>>> c22961cdc564de1d53b8f1381e1d373448e90275
 import { useAuth } from '../context/AuthContext';
 
 const Login = () => {
@@ -66,11 +63,7 @@ const Login = () => {
           <p style={{ fontSize: '12px', color: '#666', textAlign: 'center' }}>
             <strong>Comptes de démonstration (mot de passe partout : Password123!) :</strong><br />
             admin@resto.com · client@resto.com · caissier@resto.com<br />
-<<<<<<< HEAD
             cuisinier@resto.com · livreur@resto.com · magasinier@resto.com · serveur@resto.com
-=======
-            cuisinier@resto.com · livreur@resto.com · magasinier@resto.com
->>>>>>> c22961cdc564de1d53b8f1381e1d373448e90275
           </p>
         </div>
       </div>

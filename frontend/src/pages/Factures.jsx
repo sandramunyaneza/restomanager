@@ -25,22 +25,22 @@ const Factures = () => {
   }, []);
 
   const factures = useMemo(() => {
-    return paiements.map((p) => {
-      const ttc = Number(p.montant);
-      const ht = ttc / 1.2;
-      const tva = ttc - ht;
-      return {
-        numero: `PAY-${p.id}`,
-        date: String(p.cree_le).slice(0, 10),
-        client: p.id_commande ? `Commande #${p.id_commande}` : '',
-        montantHT: ht.toFixed(2),
-        tva: tva.toFixed(2),
-        montantTTC: ttc,
-        modePaiement: p.mode_reglement,
-        paye: p.etat_transaction === 'valide' || p.etat_transaction === 'validé' || true,
-      };
-    });
-  }, [paiements]);
+  return paiements.map((p) => {
+    const ttc = Number(p.montant);
+    const ht = ttc / 1.2;
+    const tva = ttc - ht;
+    return {
+      numero: `PAY-${p.id}`,
+      date: String(p.cree_le).slice(0, 10),
+      client: p.id_commande ? `Commande #${p.id_commande}` : '',
+      montantHT: ht.toFixed(2),
+      tva: tva.toFixed(2),
+      montantTTC: ttc,
+      modePaiement: p.mode_reglement,
+      paye: p.etat_transaction === 'valide' || p.etat_transaction === 'validé', 
+    };
+  });
+}, [paiements]);
 
   const handlePrint = (facture) => {
     const receiptWindow = window.open('', '_blank');

@@ -33,7 +33,6 @@ def login_user(courriel: str, mot_de_passe: str) -> TokenResponse | None:
     return TokenResponse(jeton_acces=token, utilisateur=user)
 
 
-<<<<<<< HEAD
 def login_user_for_role(courriel: str, mot_de_passe: str, expected_role: str) -> TokenResponse | None:
     result = login_user(courriel, mot_de_passe)
     if not result:
@@ -46,13 +45,6 @@ def login_user_for_role(courriel: str, mot_de_passe: str, expected_role: str) ->
 def register_user(body: RegisterRequest) -> TokenResponse:
     # Auto-inscription strictement limitée au rôle client.
     profil = "client"
-=======
-def register_user(body: RegisterRequest) -> TokenResponse:
-    allowed_self_roles = {"client", "cuisinier", "livreur", "caissier", "magasinier"}
-    profil = body.profil.strip().lower()
-    if profil not in allowed_self_roles:
-        raise ValueError("Rôle d'inscription invalide")
->>>>>>> c22961cdc564de1d53b8f1381e1d373448e90275
 
     with get_db() as conn:
         existing = fetch_one(
@@ -98,12 +90,9 @@ def register_user(body: RegisterRequest) -> TokenResponse:
     )
     token = create_access_token({"sub": str(row["id"]), "role": row["profil_utilisateur"], "email": row["courriel"]})
     return TokenResponse(jeton_acces=token, utilisateur=user)
-<<<<<<< HEAD
 
 
 def register_user_with_forced_role(body: RegisterRequest, forced_role: str) -> TokenResponse:
     if forced_role.strip().lower() != "client":
         raise ValueError("Seul le rôle client est autorisé via cette route")
     return register_user(body)
-=======
->>>>>>> c22961cdc564de1d53b8f1381e1d373448e90275
