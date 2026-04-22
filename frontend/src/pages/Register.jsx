@@ -10,10 +10,6 @@ export default function Register() {
     mot_de_passe: '',
     nom_complet: '',
     numero_telephone: '',
-<<<<<<< HEAD
-=======
-    profil: 'client',
->>>>>>> c22961cdc564de1d53b8f1381e1d373448e90275
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -26,13 +22,9 @@ export default function Register() {
     setLoading(true);
     try {
       const payload = {
-<<<<<<< HEAD
         courriel: form.courriel,
         mot_de_passe: form.mot_de_passe,
         nom_complet: form.nom_complet,
-=======
-        ...form,
->>>>>>> c22961cdc564de1d53b8f1381e1d373448e90275
         numero_telephone: form.numero_telephone || null,
       };
       const data = await authService.registerRequest(payload);
@@ -65,19 +57,6 @@ export default function Register() {
             <input value={form.numero_telephone} onChange={onChange('numero_telephone')} />
           </div>
           <div className="form-group">
-<<<<<<< HEAD
-=======
-            <label>Rôle</label>
-            <select value={form.profil} onChange={onChange('profil')}>
-              <option value="client">client</option>
-              <option value="cuisinier">cuisinier</option>
-              <option value="livreur">livreur</option>
-              <option value="caissier">caissier</option>
-              <option value="magasinier">magasinier</option>
-            </select>
-          </div>
-          <div className="form-group">
->>>>>>> c22961cdc564de1d53b8f1381e1d373448e90275
             <label>Mot de passe</label>
             <input type="password" value={form.mot_de_passe} onChange={onChange('mot_de_passe')} required />
           </div>
@@ -88,11 +67,7 @@ export default function Register() {
         </form>
         <div style={{ marginTop: '20px', textAlign: 'center' }}>
           <button className="btn-secondary" onClick={() => navigate('/login')} style={{ width: '100%' }}>
-<<<<<<< HEAD
             Se connecter
-=======
-            Retour connexion
->>>>>>> c22961cdc564de1d53b8f1381e1d373448e90275
           </button>
         </div>
       </div>

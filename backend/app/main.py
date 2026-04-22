@@ -6,11 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
-<<<<<<< HEAD
 from app.routes import auth, client, commande, cuisine, deliveries, orders, payments, products, reports, reservations, serveur, stock, users
-=======
-from app.routes import auth, deliveries, orders, payments, products, reports, reservations, stock, users
->>>>>>> c22961cdc564de1d53b8f1381e1d373448e90275
 
 settings = get_settings()
 
@@ -27,27 +23,18 @@ app.add_middleware(
 API_PREFIX = "/api/v1"
 
 app.include_router(auth.router, prefix=API_PREFIX)
-<<<<<<< HEAD
 app.include_router(client.router, prefix=API_PREFIX)
 app.include_router(users.router, prefix=API_PREFIX)
 app.include_router(products.router, prefix=API_PREFIX)
 app.include_router(orders.router, prefix=API_PREFIX)
 app.include_router(commande.router, prefix=API_PREFIX)
-=======
-app.include_router(users.router, prefix=API_PREFIX)
-app.include_router(products.router, prefix=API_PREFIX)
-app.include_router(orders.router, prefix=API_PREFIX)
->>>>>>> c22961cdc564de1d53b8f1381e1d373448e90275
 app.include_router(reservations.router, prefix=API_PREFIX)
 app.include_router(payments.router, prefix=API_PREFIX)
 app.include_router(deliveries.router, prefix=API_PREFIX)
 app.include_router(stock.router, prefix=API_PREFIX)
 app.include_router(reports.router, prefix=API_PREFIX)
-<<<<<<< HEAD
 app.include_router(serveur.router, prefix=API_PREFIX)
 app.include_router(cuisine.router, prefix=API_PREFIX)
-=======
->>>>>>> c22961cdc564de1d53b8f1381e1d373448e90275
 
 
 @app.get("/health")

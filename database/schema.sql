@@ -1,8 +1,5 @@
-<<<<<<< HEAD
-=======
 -- RestoManager — modèle relationnel (libellés en français)
 -- Encodage utf8mb4 pour accents et emojis dans les textes.
->>>>>>> c22961cdc564de1d53b8f1381e1d373448e90275
 
 CREATE DATABASE IF NOT EXISTS resto_manager
   CHARACTER SET utf8mb4
@@ -22,10 +19,7 @@ CREATE TABLE IF NOT EXISTS utilisateurs (
   profil_utilisateur      ENUM(
     'client',
     'admin',
-<<<<<<< HEAD
-    'serveur',
-=======
->>>>>>> c22961cdc564de1d53b8f1381e1d373448e90275
+    'serveur'
     'caissier',
     'cuisinier',
     'livreur',
@@ -67,7 +61,6 @@ CREATE TABLE IF NOT EXISTS produits (
 -- ---------------------------------------------------------------------------
 -- Réservations de tables
 -- ---------------------------------------------------------------------------
-<<<<<<< HEAD
 CREATE TABLE IF NOT EXISTS tables_restaurant (
   id                    BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   numero_table          VARCHAR(32) NOT NULL,
@@ -81,8 +74,6 @@ CREATE TABLE IF NOT EXISTS tables_restaurant (
 -- ---------------------------------------------------------------------------
 -- Réservations de tables
 -- ---------------------------------------------------------------------------
-=======
->>>>>>> c22961cdc564de1d53b8f1381e1d373448e90275
 CREATE TABLE IF NOT EXISTS reservations (
   id                   BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   id_utilisateur       BIGINT UNSIGNED NOT NULL COMMENT 'Client qui a réservé',
@@ -106,16 +97,12 @@ CREATE TABLE IF NOT EXISTS commandes (
   id                      BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   id_client               BIGINT UNSIGNED NOT NULL COMMENT 'Client facturé',
   id_employe_creation     BIGINT UNSIGNED NULL COMMENT 'Employé ayant saisi la commande (caisse, etc.)',
-<<<<<<< HEAD
   serveur_id              BIGINT UNSIGNED NULL COMMENT 'Serveur en salle qui suit la commande',
   table_id                BIGINT UNSIGNED NULL COMMENT 'Table de restauration pour commande sur place',
   type_commande           ENUM('sur_place','livraison','emporter') NOT NULL DEFAULT 'sur_place',
   nature_commande         ENUM('sur_place','emporter','livraison') NOT NULL DEFAULT 'sur_place',
   statut_cuisine          ENUM('a_envoyer','envoyee','en_preparation','prete') NOT NULL DEFAULT 'a_envoyer',
   heure_envoi_cuisine     DATETIME NULL,
-=======
-  nature_commande         ENUM('sur_place','emporter','livraison') NOT NULL DEFAULT 'sur_place',
->>>>>>> c22961cdc564de1d53b8f1381e1d373448e90275
   etat_commande           ENUM(
     'en_attente',
     'confirmee',
@@ -132,17 +119,13 @@ CREATE TABLE IF NOT EXISTS commandes (
   PRIMARY KEY (id),
   KEY fk_commandes_client (id_client),
   KEY fk_commandes_employe (id_employe_creation),
-<<<<<<< HEAD
   KEY fk_commandes_serveur (serveur_id),
   KEY fk_commandes_table (table_id),
-=======
->>>>>>> c22961cdc564de1d53b8f1381e1d373448e90275
   CONSTRAINT fk_commandes_client
     FOREIGN KEY (id_client) REFERENCES utilisateurs(id)
     ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT fk_commandes_employe
     FOREIGN KEY (id_employe_creation) REFERENCES utilisateurs(id)
-<<<<<<< HEAD
     ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT fk_commandes_serveur
     FOREIGN KEY (serveur_id) REFERENCES utilisateurs(id)
@@ -169,11 +152,6 @@ CREATE TABLE IF NOT EXISTS commande_statuts (
     ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB COMMENT='Historique des changements de statut des commandes';
 
-=======
-    ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB COMMENT='Commandes (tickets)';
-
->>>>>>> c22961cdc564de1d53b8f1381e1d373448e90275
 CREATE TABLE IF NOT EXISTS lignes_commande (
   id                    BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   id_commande           BIGINT UNSIGNED NOT NULL,
