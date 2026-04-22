@@ -56,12 +56,13 @@ def create_order_route(
 def patch_status(
     order_id: int,
     body: CommandeStatutMiseAJour,
+    user_id: int = Depends(get_current_user_id),
     role: str = Depends(get_current_role),
 ):
     if role not in ("admin", "caissier", "cuisinier", "serveur"):
         raise HTTPException(status_code=403, detail="Permission refusée")
     try:
-        ok = order_service.update_order_status(order_id, body.etat_commande)
+        ok = order_service.update_order_status(order_id, body.etat_commande, user_id)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
     if not ok:

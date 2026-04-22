@@ -70,21 +70,7 @@ def create_serveur_order(
                 (oid, line.id_produit, line.quantite, str(line.prix_unitaire)),
             )
         execute(conn, "UPDATE tables_restaurant SET statut='occupee' WHERE id=%s", (body.table_id,))
-        execute(
-            conn,
-            "INSERT INTO commande_statuts (commande_id, statut, changed_by) VALUES (%s, 'en_attente', %s)",
-            (oid, serveur_id),
-        )
-        row = fetch_one(
-            conn,
-            """
-            SELECT id, id_client, serveur_id, table_id, type_commande, nature_commande,
-                   statut_cuisine, heure_envoi_cuisine, etat_commande, montant_total, cree_le
-            FROM commandes WHERE id=%s
-            """,
-            (oid,),
-        )
-    return ServeurCommandeOut(**row)
+    return _get_serveur_commande(oid)
 
 
 @router.get("/mes-commandes", response_model=list[ServeurCommandeOut])
@@ -99,7 +85,7 @@ def list_my_orders(
             SELECT id, id_client, serveur_id, table_id, type_commande, nature_commande,
                    statut_cuisine, heure_envoi_cuisine, etat_commande, montant_total, cree_le
             FROM commandes
-            WHERE serveur_id=%s
+            WHERE serveur_id = %s
             ORDER BY id DESC
             """,
             (serveur_id,),
@@ -128,11 +114,11 @@ def send_to_kitchen(
             """,
             (order_id,),
         )
-        execute(
-            conn,
-            "INSERT INTO commande_statuts (commande_id, statut, changed_by) VALUES (%s, 'envoyee_cuisine', %s)",
-            (order_id, serveur_id),
-        )
+    return _get_serveur_commande(order_id)
+
+
+def _get_serveur_commande(order_id: int) -> ServeurCommandeOut:
+    with get_db() as conn:
         row = fetch_one(
             conn,
             """
@@ -142,4 +128,6 @@ def send_to_kitchen(
             """,
             (order_id,),
         )
+    if not row:
+        raise HTTPException(status_code=404, detail="Commande introuvable")
     return ServeurCommandeOut(**row)
