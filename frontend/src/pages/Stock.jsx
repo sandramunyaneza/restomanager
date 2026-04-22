@@ -1,39 +1,81 @@
-import { useState } from 'react';
-import { useAuth } from '../Context/AuthContext';
+import { useEffect, useMemo, useState } from 'react';
+import { useAuth } from '../context/AuthContext';
 import DataTable from '../components/Common/DataTable';
 import Modal from '../components/Common/Modal';
-import { mockData } from '../Data/mockData';
+import * as stockService from '../services/stockService';
 
 const Stock = () => {
   const { user } = useAuth();
-  const [stocks, setStocks] = useState(mockData.stocks);
+  const [stocks, setStocks] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({ nomingredient: '', quantite: '', seuilMin: '' });
 
-  const handleAddIngredient = () => {
-    const quantite = parseInt(formData.quantite);
-    const seuilMin = parseInt(formData.seuilMin);
-    const newIngredient = {
-      id: stocks.length + 1,
-      ...formData,
-      quantite: quantite,
-      seuilMin: seuilMin,
-      statut: quantite < seuilMin ? 'Alerte' : 'OK'
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const rows = await stockService.fetchIngredients();
+        if (!alive) return;
+        setStocks(rows);
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
+    return () => {
+      alive = false;
     };
-    setStocks([...stocks, newIngredient]);
+  }, []);
+
+  const tableRows = useMemo(
+    () =>
+      stocks.map((s) => ({
+        id: s.id,
+        nomingredient: s.libelle_ingredient,
+        quantite: Number(s.quantite_en_stock),
+        seuilMin: Number(s.quantite_seuil_alerte),
+        statut: Number(s.quantite_en_stock) < Number(s.quantite_seuil_alerte) ? 'Alerte' : 'OK',
+      })),
+    [stocks]
+  );
+
+  const handleAddIngredient = async () => {
+    // L’API backend ne propose pas la création d’ingrédients ici (uniquement list + adjust).
+    // On garde la création UI en local pour l’instant.
+    const quantite = parseFloat(formData.quantite || 0);
+    const seuilMin = parseFloat(formData.seuilMin || 0);
+    const newIngredient = {
+      id: Math.max(0, ...stocks.map((s) => s.id)) + 1,
+      libelle_ingredient: formData.nomingredient,
+      unite_mesure: 'u',
+      quantite_en_stock: quantite,
+      quantite_seuil_alerte: seuilMin,
+    };
+    setStocks((prev) => [newIngredient, ...prev]);
     setIsModalOpen(false);
     setFormData({ nomingredient: '', quantite: '', seuilMin: '' });
   };
 
   const handleReappro = (stock) => {
-    const updated = stocks.map(s => {
-      if (s.id === stock.id) {
-        const newQuantite = s.quantite + 10;
-        return { ...s, quantite: newQuantite, statut: newQuantite >= s.seuilMin ? 'OK' : 'Alerte' };
+    (async () => {
+      try {
+        await stockService.adjustIngredientStock(stock.id, {
+          variation_quantite: 10,
+          motif_mouvement: 'Réapprovisionnement (UI)',
+        });
+        const refreshed = await stockService.fetchIngredients();
+        setStocks(refreshed);
+      } catch {
+        // fallback local
+        const updated = stocks.map((s) => {
+          if (s.id === stock.id) {
+            return { ...s, quantite_en_stock: Number(s.quantite_en_stock) + 10 };
+          }
+          return s;
+        });
+        setStocks(updated);
       }
-      return s;
-    });
-    setStocks(updated);
+    })();
   };
 
   return (
@@ -55,7 +97,7 @@ const Stock = () => {
           { key: 'seuilMin', label: 'Seuil min' },
           { key: 'statut', label: 'Statut' }
         ]}
-        data={stocks}
+        data={tableRows}
         actions={[
           { label: 'Réappro', icon: 'fa-plus', className: 'btn-secondary', onClick: handleReappro }
         ]}
@@ -74,7 +116,9 @@ const Stock = () => {
           <label>Seuil minimum</label>
           <input type="number" value={formData.seuilMin} onChange={(e) => setFormData({ ...formData, seuilMin: e.target.value })} />
         </div>
-        <button className="btn-primary" onClick={handleAddIngredient}>Ajouter</button>
+        <button className="btn-primary" onClick={handleAddIngredient} disabled={loading}>
+          Ajouter
+        </button>
       </Modal>
     </div>
   );

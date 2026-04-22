@@ -1,11 +1,46 @@
-import React, { useState } from 'react';
-import { useAuth } from '../Context/AuthContext';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useAuth } from '../context/AuthContext';
 import DataTable from '../components/Common/DataTable';
-import { mockData } from '../Data/mockData';
+import * as paymentsService from '../services/paymentsService';
 
 const Factures = () => {
   const { user } = useAuth();
-  const [factures, setFactures] = useState(mockData.factures);
+  const [paiements, setPaiements] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const rows = await paymentsService.fetchPayments();
+        if (!alive) return;
+        setPaiements(rows);
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const factures = useMemo(() => {
+    return paiements.map((p) => {
+      const ttc = Number(p.montant);
+      const ht = ttc / 1.2;
+      const tva = ttc - ht;
+      return {
+        numero: `PAY-${p.id}`,
+        date: String(p.cree_le).slice(0, 10),
+        client: p.id_commande ? `Commande #${p.id_commande}` : '',
+        montantHT: ht.toFixed(2),
+        tva: tva.toFixed(2),
+        montantTTC: ttc,
+        modePaiement: p.mode_reglement,
+        paye: p.etat_transaction === 'valide' || p.etat_transaction === 'validé' || true,
+      };
+    });
+  }, [paiements]);
 
   const handlePrint = (facture) => {
     const receiptWindow = window.open('', '_blank');
@@ -59,11 +94,7 @@ const Factures = () => {
   };
 
   const handleMarkAsPaid = (facture) => {
-    const updated = factures.map(f => 
-      f.numero === facture.numero ? { ...f, paye: true } : f
-    );
-    setFactures(updated);
-    showNotification(`Facture ${facture.numero} marquée comme payée`);
+    showNotification(`Paiement ${facture.numero} déjà enregistré côté API.`);
   };
 
   const showNotification = (msg) => {

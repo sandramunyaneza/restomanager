@@ -1,30 +1,84 @@
-import React, { useState } from 'react';
-import { useAuth } from '../Context/AuthContext';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useAuth } from '../context/AuthContext';
 import DataTable from '../components/Common/DataTable';
 import Modal from '../components/Common/Modal';
-import { mockData } from '../Data/mockData';
+import * as productsService from '../services/productsService';
+import * as ordersService from '../services/ordersService';
 
 const Menu = () => {
   const { user } = useAuth();
-  const [plats, setPlats] = useState(mockData.plats);
+  const [plats, setPlats] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({ nom: '', description: '', prix: '', categorie: 'Plat principal' });
 
-  const handleAddPlat = () => {
-    const newPlat = {
-      id: plats.length + 1,
-      ...formData,
-      prix: parseFloat(formData.prix)
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const rows = await productsService.fetchProducts();
+        if (!alive) return;
+        setPlats(rows);
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
+    return () => {
+      alive = false;
     };
-    setPlats([...plats, newPlat]);
+  }, []);
+
+  const tableRows = useMemo(
+    () =>
+      plats.map((p) => ({
+        id: p.id,
+        image: p.image_url ? (
+          <img
+            src={p.image_url}
+            alt={p.nom_produit}
+            style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 8 }}
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+            }}
+          />
+        ) : (
+          'Aucune image'
+        ),
+        nom: p.nom_produit,
+        description: p.description_detaillee,
+        prix: Number(p.prix_tarif),
+        categorie: p.categorie_nom || (p.id_categorie ? `Catégorie #${p.id_categorie}` : ''),
+        est_disponible: p.est_disponible,
+      })),
+    [plats]
+  );
+
+  const handleAddPlat = async () => {
+    // Côté API: création admin uniquement, nécessite id_categorie.
+    // Ici on ne gère pas le mapping libellé->id, donc on crée par défaut en catégorie 1.
+    const payload = {
+      id_categorie: 1,
+      nom_produit: formData.nom,
+      description_detaillee: formData.description,
+      prix_tarif: Number(formData.prix || 0),
+      est_disponible: true,
+    };
+    const created = await productsService.createProduct(payload);
+    setPlats((prev) => [...prev, created]);
     setIsModalOpen(false);
     setFormData({ nom: '', description: '', prix: '', categorie: 'Plat principal' });
   };
 
   const handleDeletePlat = (plat) => {
     if (window.confirm('Supprimer ce plat ?')) {
-      setPlats(plats.filter(p => p.id !== plat.id));
+      // Endpoint DELETE non implémenté côté backend : on retire côté UI uniquement.
+      setPlats(plats.filter((p) => p.id !== plat.id));
     }
+  };
+
+  const handleAddToOrder = (plat) => {
+    ordersService.addProductToDraft(plat);
+    window.alert(`"${plat.nom_produit}" ajouté à la commande du client.`);
   };
 
   return (
@@ -40,16 +94,21 @@ const Menu = () => {
       
       <DataTable
         columns={[
+          { key: 'image', label: 'Image' },
           { key: 'id', label: 'ID' },
           { key: 'nom', label: 'Nom' },
           { key: 'description', label: 'Description' },
           { key: 'prix', label: 'Prix' },
           { key: 'categorie', label: 'Catégorie' }
         ]}
-        data={plats}
-        actions={user?.role === 'admin' ? [
-          { label: 'Supprimer', icon: 'fa-trash', className: 'btn-danger', onClick: handleDeletePlat }
-        ] : []}
+        data={tableRows}
+        actions={
+          user?.role === 'admin'
+            ? [{ label: 'Supprimer', icon: 'fa-trash', className: 'btn-danger', onClick: handleDeletePlat }]
+            : user?.role === 'client' || user?.role === 'serveur'
+              ? [{ label: 'Commander', icon: 'fa-cart-plus', className: 'btn-primary', onClick: handleAddToOrder }]
+              : []
+        }
       />
 
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Ajouter un plat">
@@ -74,7 +133,9 @@ const Menu = () => {
             <option>Boisson</option>
           </select>
         </div>
-        <button className="btn-primary" onClick={handleAddPlat}>Ajouter plat</button>
+        <button className="btn-primary" onClick={handleAddPlat} disabled={loading}>
+          Ajouter plat
+        </button>
       </Modal>
     </div>
   );

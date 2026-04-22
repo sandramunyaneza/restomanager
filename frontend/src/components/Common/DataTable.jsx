@@ -1,6 +1,7 @@
 import React from 'react';
 
 const DataTable = ({ columns, data, actions }) => {
+  const hasActions = Array.isArray(actions) && actions.length > 0;
   return (
     <div className="data-table">
       <table>
@@ -9,16 +10,16 @@ const DataTable = ({ columns, data, actions }) => {
             {columns.map((col, idx) => (
               <th key={idx}>{col.label}</th>
             ))}
-            {actions && <th>Actions</th>}
+            {hasActions && <th>Actions</th>}
           </tr>
         </thead>
         <tbody>
           {data.map((row, idx) => (
-            <tr key={idx}>
+            <tr key={row.id ?? idx}>
               {columns.map((col, colIdx) => (
                 <td key={colIdx}>{row[col.key]}</td>
               ))}
-              {actions && (
+              {hasActions && (
                 <td>
                   {actions.map((action, actionIdx) => (
                     <button
