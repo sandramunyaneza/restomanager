@@ -11,7 +11,6 @@ from app.config import get_settings
 
 Params = Union[Sequence[Any], Tuple[()]]
 
-
 def _connect():
     s = get_settings()
     return pymysql.connect(
