@@ -25,3 +25,9 @@ class ProduitCreate(BaseModel):
     description_detaillee: Optional[str] = None
     prix_tarif: Decimal = Field(ge=0)
     est_disponible: bool = True
+
+class ProduitUpdate(BaseModel):
+    nom_produit: str
+    description_detaillee: Optional[str] = None
+    prix_tarif: Decimal = Field(ge=0)
+    id_categorie: int

@@ -4,7 +4,8 @@ from .client import ClientRegisterRequest
 from .delivery import LivraisonMiseAJour, LivraisonOut
 from .order import CommandeCreate, CommandeOut, CommandeStatutMiseAJour, LigneCommandeEntree
 from .payment import PaiementCreate, PaiementOut
-from .product import CategorieOut, ProduitCreate, ProduitOut
+#from .product import CategorieOut, ProduitCreate, ProduitOut
+from .product import CategorieOut, ProduitCreate, ProduitOut, ProduitUpdate
 from .report import RapportSynthese
 from .reservation import ReservationCreate, ReservationOut, ReservationStatutMiseAJour
 from .stock import IngredientOut, MouvementStockOut, StockAjustement, IngredientCreate, IngredientUpdate
@@ -23,6 +24,7 @@ __all__ = [
     "CategorieOut",
     "ProduitOut",
     "ProduitCreate",
+    "ProduitUpdate", 
     "ReservationCreate",
     "ReservationOut",
     "ReservationStatutMiseAJour",

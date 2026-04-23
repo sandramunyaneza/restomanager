@@ -26,7 +26,25 @@ WHERE c.id = %s
 
 def _order_out(oid: int) -> CommandeOut:
     with get_db() as conn:
-        row = fetch_one(conn, _ORDER_ONE, (oid,))
+        row = fetch_one(
+            conn,
+            """
+            SELECT 
+                c.id,
+                c.id_client,
+                c.nature_commande,
+                c.etat_commande,
+                c.montant_total,
+                c.statut_reglement,
+                c.cree_le,
+                c.remarques_commande,
+                u.nom_complet AS client_nom
+            FROM commandes c
+            LEFT JOIN utilisateurs u ON u.id = c.id_client
+            WHERE c.id = %s
+            """,
+            (oid,)
+        )
     if not row:
         raise HTTPException(status_code=404, detail="Commande introuvable")
     return CommandeOut(**row)
@@ -40,10 +58,12 @@ def list_orders(
     rows = order_service.list_orders(user_id, role)
     with get_db() as conn:
         for row in rows:
-            user = fetch_one(conn, "SELECT nom_complet FROM utilisateurs WHERE id=%s", (row["id_client"],))
-            row["client_nom"] = user["nom_complet"] if user else None
+            if row.get("id_client"):
+                user = fetch_one(conn, "SELECT nom_complet FROM utilisateurs WHERE id=%s", (row["id_client"],))
+                row["client_nom"] = user["nom_complet"] if user else None
+            else:
+                row["client_nom"] = "Client sur place"
     return [CommandeOut(**r) for r in rows]
-
 
 @router.post("", response_model=CommandeOut, status_code=201)
 def create_order_route(

@@ -29,3 +29,13 @@ export async function libererTable(tableId) {
   const { data } = await api.put(`/api/v1/serveur/table/${tableId}/liberer`);
   return data;
 }
+
+export async function fetchProduits() {
+  const { data } = await api.get('/api/v1/serveur/produits');
+  return data;
+}
+
+export async function servirCommande(orderId) {
+  const { data } = await api.put(`/api/v1/orders/${orderId}/status`, { etat_commande: 'livree' });
+  return data;
+}

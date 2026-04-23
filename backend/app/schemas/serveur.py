@@ -8,10 +8,11 @@ from app.schemas.order import LigneCommandeEntree
 
 
 class ServeurCommandeCreate(BaseModel):
-    id_client: int
     table_id: int
     articles: list[LigneCommandeEntree]
     remarques_commande: Optional[str] = None
+    id_client: Optional[int] = None
+    serveur_type: str = Field(default="cuisine", pattern="^(cuisine|bar)$")
 
 
 class TableRestaurantOut(BaseModel):
@@ -24,7 +25,7 @@ class TableRestaurantOut(BaseModel):
 
 class ServeurCommandeOut(BaseModel):
     id: int
-    id_client: int
+    id_client: Optional[int] = None
     serveur_id: Optional[int] = None
     table_id: Optional[int] = None
     type_commande: str

@@ -50,7 +50,7 @@ const Commandes = () => {
       commandes.map((o) => ({
         id: o.id,
         dateheure: o.cree_le,
-        client: o.client_nom ? `Client #${o.id_client}` : '',
+        client: o.client_nom || `Client #${o.id_client}`,
         montantTotal: Number(o.montant_total),
         statutCommande: o.etat_commande,
         paye: o.statut_reglement === 'payee',
@@ -68,8 +68,8 @@ const Commandes = () => {
   const addToCart = (product) => {
     const existing = cartItems.find(item => item.id_produit === product.id);
     if (existing) {
-      setCartItems(cartItems.map(item => 
-        item.id_produit === product.id 
+      setCartItems(cartItems.map(item =>
+        item.id_produit === product.id
           ? { ...item, quantite: item.quantite + 1 }
           : item
       ));
@@ -96,6 +96,18 @@ const Commandes = () => {
     }
   };
 
+  const updateQuantity = (productId, newQuantity) => {
+    if (newQuantity <= 0) {
+      setCartItems(cartItems.filter(item => item.id_produit !== productId));
+    } else {
+      setCartItems(cartItems.map(item =>
+        item.id_produit === productId
+          ? { ...item, quantite: newQuantity }
+          : item
+      ));
+    }
+  };
+
   const validateOrder = async () => {
     if (cartItems.length === 0) {
       alert('Ajoutez au moins un article');
@@ -113,7 +125,7 @@ const Commandes = () => {
         quantite: item.quantite,
         prix_unitaire: item.prix_unitaire
       })),
-      remarques_commande: orderRemark || `Réservation #${selectedReservation.id} - Table: ${selectedReservation.designation_table || 'non spécifiée'}`
+      remarques_commande: orderRemark || `Réservation #${selectedReservation.id}`
     };
     
     try {
@@ -220,14 +232,14 @@ const Commandes = () => {
         onClick: (row) => handleUpdateStatus(row, 'livree')
       });
     }
-  if (user?.role === 'serveur') {
+    if (user?.role === 'serveur') {
       actions.push({
         label: 'Marquer livrée',
         icon: 'fa-check-circle',
         className: 'btn-success',
         onClick: (row) => handleUpdateStatus(row, 'livree')
-    });
-  }
+      });
+    }
     
     return actions;
   };
@@ -286,104 +298,270 @@ const Commandes = () => {
         actions={getActions()}
       />
 
-      <Modal 
-        isOpen={isOrderModalOpen} 
-        onClose={() => setIsOrderModalOpen(false)} 
-        title={`Prendre commande - Réservation #${selectedReservation?.id}`}
-      >
-        <div style={{ marginBottom: '15px', padding: '10px', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
-          <p><strong>Client:</strong> Client #{selectedReservation?.id_utilisateur}</p>
-          <p><strong>Table:</strong> {selectedReservation?.designation_table || 'À définir'}</p>
-          <p><strong>Personnes:</strong> {selectedReservation?.nombre_convives}</p>
-        </div>
-
-        <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
-          <div style={{ flex: 1, minWidth: '250px' }}>
-            <h4>🍽️ Menu</h4>
-            <div style={{ maxHeight: '400px', overflowY: 'auto', border: '1px solid #eee', borderRadius: '8px', padding: '10px' }}>
-              {products.map(product => (
-                <div key={product.id} style={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
-                  alignItems: 'center',
-                  padding: '10px', 
-                  borderBottom: '1px solid #eee' 
-                }}>
-                  <div>
-                    <strong>{product.nom_produit}</strong>
-                    <br />
-                    <small>{product.prix_tarif}€</small>
-                  </div>
-                  <button className="btn-secondary" style={{ padding: '5px 15px' }} onClick={() => addToCart(product)}>
-                    +
-                  </button>
-                </div>
-              ))}
-              {products.length === 0 && (
-                <p style={{ textAlign: 'center', padding: '20px' }}>Aucun produit disponible</p>
-              )}
+      {/* Modal de prise de commande - DESIGN AMÉLIORÉ */}
+      {isOrderModalOpen && selectedReservation && (
+        <div className="modal-overlay" onClick={() => setIsOrderModalOpen(false)}>
+          <div className="modal-content" style={{ 
+            maxWidth: 1000, 
+            width: '90%', 
+            maxHeight: '85vh',
+            display: 'flex',
+            flexDirection: 'column',
+            padding: 0,
+            overflow: 'hidden'
+          }} onClick={e => e.stopPropagation()}>
+            
+            {/* En-tête */}
+            <div className="modal-header" style={{
+              padding: '20px 25px',
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              color: 'white',
+              borderRadius: '16px 16px 0 0'
+            }}>
+              <div>
+                <h3 style={{ margin: 0, color: 'white' }}>
+                  <i className="fas fa-clipboard-list"></i> Prise de commande
+                </h3>
+                <p style={{ margin: '5px 0 0', opacity: 0.9, fontSize: '13px' }}>
+                  Réservation #{selectedReservation.id} - Client #{selectedReservation.id_utilisateur}
+                </p>
+              </div>
+              <button 
+                className="btn-secondary" 
+                onClick={() => setIsOrderModalOpen(false)}
+                style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: 'white' }}
+              >
+                <i className="fas fa-times"></i>
+              </button>
             </div>
-          </div>
-          
-          <div style={{ flex: 1, minWidth: '250px' }}>
-            <h4>🛒 Panier</h4>
-            <div style={{ maxHeight: '300px', overflowY: 'auto', border: '1px solid #eee', borderRadius: '8px', padding: '10px', minHeight: '200px' }}>
-              {cartItems.length === 0 ? (
-                <p style={{ textAlign: 'center', padding: '20px', color: '#999' }}>Aucun article</p>
-              ) : (
-                cartItems.map(item => (
-                  <div key={item.id_produit} style={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
-                    alignItems: 'center',
-                    padding: '10px', 
-                    borderBottom: '1px solid #eee' 
+
+            {/* Corps avec défilement */}
+            <div style={{ 
+              flex: 1, 
+              overflowY: 'auto', 
+              padding: '20px 25px',
+              background: '#f8f9fa'
+            }}>
+              {/* Infos réservation */}
+              <div style={{
+                background: 'white',
+                borderRadius: '12px',
+                padding: '15px',
+                marginBottom: '20px',
+                display: 'flex',
+                gap: '20px',
+                flexWrap: 'wrap',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+              }}>
+                <div><strong>👥 Personnes :</strong> {selectedReservation.nombre_convives}</div>
+                <div><strong>📅 Date :</strong> {new Date(selectedReservation.horaire_reservation).toLocaleDateString()}</div>
+                <div><strong>⏰ Heure :</strong> {new Date(selectedReservation.horaire_reservation).toLocaleTimeString().slice(0,5)}</div>
+                <div><strong>🍽️ Table :</strong> {selectedReservation.designation_table || 'À définir'}</div>
+              </div>
+
+              {/* Menu et Panier - Disposition en colonnes */}
+              <div style={{ display: 'flex', gap: '25px', flexWrap: 'wrap' }}>
+                {/* Colonne Menu */}
+                <div style={{ flex: 2, minWidth: '280px' }}>
+                  <div style={{
+                    background: 'white',
+                    borderRadius: '12px',
+                    overflow: 'hidden',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
                   }}>
-                    <div>
-                      <strong>{item.nom_produit}</strong>
-                      <br />
-                      <small>x{item.quantite}</small>
+                    <div style={{
+                      background: '#667eea',
+                      color: 'white',
+                      padding: '12px 15px',
+                      fontWeight: 'bold'
+                    }}>
+                      <i className="fas fa-utensils"></i> Menu
                     </div>
-                    <div>
-                      <span style={{ marginRight: '10px' }}>{(item.prix_unitaire * item.quantite).toFixed(2)}€</span>
-                      <button className="btn-danger" style={{ padding: '2px 10px' }} onClick={() => removeFromCart(item.id_produit)}>
-                        -
-                      </button>
+                    <div style={{ maxHeight: '400px', overflowY: 'auto', padding: '10px' }}>
+                      {products.length === 0 ? (
+                        <p style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
+                          <i className="fas fa-spinner fa-spin"></i> Chargement...
+                        </p>
+                      ) : (
+                        products.map(product => (
+                          <div key={product.id} style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            padding: '12px',
+                            borderBottom: '1px solid #eee',
+                            transition: 'background 0.2s'
+                          }}>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontWeight: 'bold' }}>{product.nom_produit}</div>
+                              <div style={{ fontSize: '12px', color: '#666' }}>{product.prix_tarif}€</div>
+                            </div>
+                            <button
+                              className="btn-primary"
+                              onClick={() => addToCart(product)}
+                              style={{
+                                padding: '6px 15px',
+                                fontSize: '13px',
+                                background: '#28a745',
+                                borderRadius: '20px'
+                              }}
+                            >
+                              <i className="fas fa-plus"></i> Ajouter
+                            </button>
+                          </div>
+                        ))
+                      )}
                     </div>
                   </div>
-                ))
-              )}
+                </div>
+
+                {/* Colonne Panier */}
+                <div style={{ flex: 1.2, minWidth: '260px' }}>
+                  <div style={{
+                    background: 'white',
+                    borderRadius: '12px',
+                    overflow: 'hidden',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                    position: 'sticky',
+                    top: 0
+                  }}>
+                    <div style={{
+                      background: '#28a745',
+                      color: 'white',
+                      padding: '12px 15px',
+                      fontWeight: 'bold'
+                    }}>
+                      <i className="fas fa-shopping-cart"></i> Panier
+                      {cartItems.length > 0 && (
+                        <span style={{
+                          background: 'white',
+                          color: '#28a745',
+                          padding: '2px 8px',
+                          borderRadius: '20px',
+                          marginLeft: '10px',
+                          fontSize: '12px'
+                        }}>
+                          {cartItems.length} article(s)
+                        </span>
+                      )}
+                    </div>
+                    
+                    <div style={{ maxHeight: '350px', overflowY: 'auto', padding: '10px' }}>
+                      {cartItems.length === 0 ? (
+                        <p style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
+                          <i className="fas fa-shopping-basket"></i> Panier vide
+                        </p>
+                      ) : (
+                        cartItems.map(item => (
+                          <div key={item.id_produit} style={{
+                            padding: '10px',
+                            borderBottom: '1px solid #eee',
+                            marginBottom: '5px'
+                          }}>
+                            <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>{item.nom_produit}</div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <div style={{ fontSize: '13px', color: '#666' }}>
+                                {item.prix_unitaire}€ x {item.quantite}
+                              </div>
+                              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                <span style={{ fontWeight: 'bold' }}>{(item.prix_unitaire * item.quantite).toFixed(2)}€</span>
+                                <div style={{ display: 'flex', gap: '5px' }}>
+                                  <button
+                                    className="btn-secondary"
+                                    onClick={() => updateQuantity(item.id_produit, item.quantite - 1)}
+                                    style={{ padding: '2px 8px', fontSize: '12px', background: '#dc3545' }}
+                                  >
+                                    -
+                                  </button>
+                                  <span style={{ minWidth: '25px', textAlign: 'center' }}>{item.quantite}</span>
+                                  <button
+                                    className="btn-secondary"
+                                    onClick={() => updateQuantity(item.id_produit, item.quantite + 1)}
+                                    style={{ padding: '2px 8px', fontSize: '12px', background: '#28a745' }}
+                                  >
+                                    +
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+
+                    <div style={{
+                      padding: '15px',
+                      borderTop: '1px solid #eee',
+                      background: '#f8f9fa'
+                    }}>
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        fontSize: '18px',
+                        fontWeight: 'bold',
+                        marginBottom: '15px'
+                      }}>
+                        <span>Total :</span>
+                        <span style={{ color: '#28a745' }}>{cartTotal.toFixed(2)}€</span>
+                      </div>
+
+                      <div style={{ marginBottom: '15px' }}>
+                        <label style={{ display: 'block', fontSize: '13px', marginBottom: '5px', color: '#666' }}>
+                          <i className="fas fa-comment"></i> Remarques
+                        </label>
+                        <textarea
+                          value={orderRemark}
+                          onChange={(e) => setOrderRemark(e.target.value)}
+                          placeholder="Ex: Sans oignons, bien cuit..."
+                          style={{
+                            width: '100%',
+                            padding: '10px',
+                            borderRadius: '8px',
+                            border: '1px solid #ddd',
+                            fontSize: '13px',
+                            resize: 'vertical'
+                          }}
+                          rows="2"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div style={{ marginTop: '15px', paddingTop: '15px', borderTop: '2px solid #ddd', fontWeight: 'bold', textAlign: 'right' }}>
-              Total: {cartTotal.toFixed(2)}€
+
+            {/* Pied de page avec boutons */}
+            <div style={{
+              padding: '15px 25px',
+              background: 'white',
+              borderTop: '1px solid #eee',
+              display: 'flex',
+              justifyContent: 'flex-end',
+              gap: '10px',
+              borderRadius: '0 0 16px 16px'
+            }}>
+              <button
+                className="btn-secondary"
+                onClick={() => setIsOrderModalOpen(false)}
+                style={{ padding: '10px 20px' }}
+              >
+                <i className="fas fa-times"></i> Annuler
+              </button>
+              <button
+                className="btn-primary"
+                onClick={validateOrder}
+                disabled={cartItems.length === 0}
+                style={{
+                  padding: '10px 25px',
+                  background: cartItems.length === 0 ? '#ccc' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+                }}
+              >
+                <i className="fas fa-paper-plane"></i> Envoyer en cuisine
+              </button>
             </div>
           </div>
         </div>
-
-        <div className="form-group" style={{ marginTop: '15px' }}>
-          <label>Remarques spéciales (optionnel)</label>
-          <textarea 
-            value={orderRemark} 
-            onChange={(e) => setOrderRemark(e.target.value)}
-            placeholder="Ex: Sans oignons, bien cuit, etc."
-            style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
-            rows="2"
-          />
-        </div>
-        
-        <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
-          <button className="btn-primary" onClick={validateOrder} disabled={cartItems.length === 0}>
-            Envoyer en cuisine
-          </button>
-          <button className="btn-secondary" onClick={() => {
-            setIsOrderModalOpen(false);
-            setCartItems([]);
-            setSelectedReservation(null);
-          }}>
-            Annuler
-          </button>
-        </div>
-      </Modal>
+      )}
     </div>
   );
 };

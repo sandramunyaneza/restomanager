@@ -20,7 +20,7 @@ class CommandeCreate(BaseModel):
 
 class CommandeOut(BaseModel):
     id: int
-    id_client: int
+    id_client: Optional[int] = None
     nature_commande: str
     etat_commande: str
     montant_total: Decimal

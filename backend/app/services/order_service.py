@@ -102,7 +102,14 @@ def list_orders(user_id: int, role: str) -> List[dict]:
                 conn,
                 _SQL_LIST + " WHERE etat_commande IN ('prete', 'en_attente', 'confirmee', 'en_cours') ORDER BY cree_le DESC",
             )
+        if role == "cuisinier":
+            return fetch_all(
+                conn,
+                _SQL_LIST + " WHERE type_commande = 'sur_place' AND statut_cuisine IN ('a_envoyer', 'en_preparation') ORDER BY cree_le ASC",
+            )
+        #return fetch_all(conn, _SQL_LIST + " ORDER BY cree_le DESC LIMIT 500")
         return fetch_all(conn, _SQL_LIST + " ORDER BY cree_le DESC LIMIT 500")
+        
 
 def update_order_status(order_id: int, new_status: str, changed_by: int = None) -> bool:
     allowed = {

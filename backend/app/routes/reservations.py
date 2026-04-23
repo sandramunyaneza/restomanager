@@ -20,6 +20,7 @@ FROM reservations r
 LEFT JOIN utilisateurs u ON u.id = r.id_utilisateur
 """
 
+
 @router.get("", response_model=list[ReservationOut])
 def list_reservations(
     user_id: int = Depends(get_current_user_id),
@@ -29,11 +30,11 @@ def list_reservations(
         if role == "client":
             rows = fetch_all(
                 conn,
-                _SQL_RES + " WHERE id_utilisateur = %s ORDER BY horaire_reservation DESC",
+                _SQL_RES + " WHERE r.id_utilisateur = %s ORDER BY r.horaire_reservation DESC",
                 (user_id,),
             )
         else:
-            rows = fetch_all(conn, _SQL_RES + " ORDER BY horaire_reservation DESC LIMIT 500")
+            rows = fetch_all(conn, _SQL_RES + " ORDER BY r.horaire_reservation DESC LIMIT 500")
     return [ReservationOut(**r) for r in rows]
 
 
@@ -64,7 +65,7 @@ def create_reservation(
             ),
         )
         rid = last_insert_id(conn)
-        row = fetch_one(conn, _SQL_RES + " WHERE id=%s", (rid,))
+        row = fetch_one(conn, _SQL_RES + " WHERE r.id=%s", (rid,))
     return ReservationOut(**row)
 
 
@@ -83,7 +84,7 @@ def set_status(
             "UPDATE reservations SET etat_reservation=%s WHERE id=%s",
             (body.etat_reservation, res_id),
         )
-        row = fetch_one(conn, _SQL_RES + " WHERE id=%s", (res_id,))
+        row = fetch_one(conn, _SQL_RES + " WHERE r.id=%s", (res_id,))
     if not n or not row:
         raise HTTPException(status_code=404, detail="Réservation introuvable")
     return ReservationOut(**row)
