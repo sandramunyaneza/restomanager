@@ -5,11 +5,11 @@ USE resto_manager;
 INSERT INTO utilisateurs (courriel, mot_de_passe_chiffre, nom_complet, numero_telephone, profil_utilisateur, compte_actif) VALUES
 ('admin@resto.com', '$2b$12$sMkiSxqwc6RqCakgY93oiOCdaTVxjr0iewKegmLhPQSpdZ/NJZx7K', 'Administrateur', '0972811353', 'admin', 1),
 ('client@resto.com', '$2b$12$K09C/JiJTjK.OSf0gbSNNu7cn41vVuhz.spNSquAq6gjViV8oHnj2', 'Jean Dupont', '0600000002', 'client', 1),
-('caissier@resto.com', '$2b$12$K09C/JiJTjK.OSf0gbSNNu7cn41vVuhz.spNSquAq6gjViV8oHnj2', 'Marie Caisse', '0600000003', 'caissier', 1),
-('cuisinier@resto.com', '$2b$12$K09C/JiJTjK.OSf0gbSNNu7cn41vVuhz.spNSquAq6gjViV8oHnj2', 'Pierre Cuisine', '0600000004', 'cuisinier', 1),
-('livreur@resto.com', '$2b$12$K09C/JiJTjK.OSf0gbSNNu7cn41vVuhz.spNSquAq6gjViV8oHnj2', 'Paul Livreur', '0600000005', 'livreur', 1),
-('magasinier@resto.com', '$2b$12$K09C/JiJTjK.OSf0gbSNNu7cn41vVuhz.spNSquAq6gjViV8oHnj2', 'Sophie Stock', '0600000006', 'magasinier', 1),
-('serveur@resto.com', '$2b$12$K09C/JiJTjK.OSf0gbSNNu7cn41vVuhz.spNSquAq6gjViV8oHnj2', 'Samuel Salle', '0600000007', 'serveur', 1);
+('caissier@resto.com', '$2b$12$sMkiSxqwc6RqCakgY93oiOCdaTVxjr0iewKegmLhPQSpdZ/NJZx7K', 'Marie Caisse', '0600000003', 'caissier', 1),
+('cuisinier@resto.com', '$2b$12$sMkiSxqwc6RqCakgY93oiOCdaTVxjr0iewKegmLhPQSpdZ/NJZx7K', 'Pierre Cuisine', '0600000004', 'cuisinier', 1),
+('livreur@resto.com', '$2b$12$sMkiSxqwc6RqCakgY93oiOCdaTVxjr0iewKegmLhPQSpdZ/NJZx7K', 'Paul Livreur', '0600000005', 'livreur', 1),
+('magasinier@resto.com', '$2b$12$sMkiSxqwc6RqCakgY93oiOCdaTVxjr0iewKegmLhPQSpdZ/NJZx7K', 'Sophie Stock', '0600000006', 'magasinier', 1),
+('serveur@resto.com', '$2b$12$sMkiSxqwc6RqCakgY93oiOCdaTVxjr0iewKegmLhPQSpdZ/NJZx7K', 'Samuel Salle', '0600000007', 'serveur', 1);
 
 INSERT INTO categories_menu (libelle, ordre_tri) VALUES
 ('Entrées', 1),

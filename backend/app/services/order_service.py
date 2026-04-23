@@ -12,21 +12,23 @@ from app.schemas.serveur import ServeurCommandeCreate
 
 _ORDER_LIST_SQL = """
 SELECT
-  id,
-  id_client,
-  type_commande,
-  type_commande AS nature_commande,
-  table_id,
-  etat_commande,
-  statut_cuisine,
-  montant_total,
-  statut_reglement,
-  cree_le,
-  remarques_commande
-FROM commandes
+  c.id,
+  c.id_client,
+  u.nom_complet AS nom_client,
+  c.type_commande,
+  c.type_commande AS nature_commande,
+  c.table_id,
+  c.etat_commande,
+  c.statut_cuisine,
+  c.montant_total,
+  c.statut_reglement,
+  c.cree_le,
+  c.remarques_commande
+FROM commandes c
+LEFT JOIN utilisateurs u ON u.id = c.id_client
 """
 
-_ORDER_BY_ID = _ORDER_LIST_SQL + " WHERE id = %s"
+_ORDER_BY_ID = _ORDER_LIST_SQL + " WHERE c.id = %s"
 
 _LIGNES_SQL = """
 SELECT
@@ -225,10 +227,10 @@ def create_table_order_serveur(serveur_id: int, body: ServeurCommandeCreate) -> 
 def list_orders(user_id: int, role: str) -> List[dict]:
     with get_db() as conn:
         if role == "client":
-            return fetch_all(conn, _ORDER_LIST_SQL + " WHERE id_client = %s ORDER BY cree_le DESC", (user_id,))
+            return fetch_all(conn, _ORDER_LIST_SQL + " WHERE c.id_client = %s ORDER BY c.cree_le DESC", (user_id,))
         if role == "serveur":
-            return fetch_all(conn, _ORDER_LIST_SQL + " WHERE serveur_id = %s ORDER BY cree_le DESC", (user_id,))
-        return fetch_all(conn, _ORDER_LIST_SQL + " ORDER BY cree_le DESC LIMIT 500")
+            return fetch_all(conn, _ORDER_LIST_SQL + " WHERE c.serveur_id = %s ORDER BY c.cree_le DESC", (user_id,))
+        return fetch_all(conn, _ORDER_LIST_SQL + " ORDER BY c.cree_le DESC LIMIT 500")
 
 
 def fetch_commande_header(order_id: int) -> Optional[Dict[str, Any]]:

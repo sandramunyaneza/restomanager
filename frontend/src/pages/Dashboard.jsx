@@ -138,7 +138,7 @@ const Dashboard = () => {
                 <div style={{ padding: '20px', borderBottom: '1px solid #e0e0e0' }}>
                   <h3>Derniers encaissements</h3>
                 </div>
-                <table>
+                <table style={{ width: '100%' }}>
                   <thead>
                     <tr>
                       <th>Client</th>
@@ -161,7 +161,7 @@ const Dashboard = () => {
                 <div style={{ padding: '20px', borderBottom: '1px solid #e0e0e0' }}>
                   <h3>Alertes paiement</h3>
                 </div>
-                <table>
+                <table style={{ width: '100%' }}>
                   <thead>
                     <tr>
                       <th>Commande</th>

@@ -4,14 +4,16 @@ from app.database import execute, fetch_all, fetch_one, get_db, last_insert_id
 
 _SQL_RES = """
 SELECT
-  id,
-  id_utilisateur,
-  horaire_reservation,
-  nombre_convives,
-  etat_reservation,
-  designation_table,
-  remarques_client
-FROM reservations
+  r.id,
+  r.id_utilisateur,
+  u.nom_complet AS nom_client,
+  r.horaire_reservation,
+  r.nombre_convives,
+  r.etat_reservation,
+  r.designation_table,
+  r.remarques_client
+FROM reservations r
+LEFT JOIN utilisateurs u ON u.id = r.id_utilisateur
 """
 
 
@@ -19,7 +21,7 @@ def list_for_user_client(user_id: int) -> List[dict]:
     with get_db() as conn:
         return fetch_all(
             conn,
-            _SQL_RES + " WHERE id_utilisateur = %s ORDER BY horaire_reservation DESC",
+            _SQL_RES + " WHERE r.id_utilisateur = %s ORDER BY r.horaire_reservation DESC",
             (user_id,),
         )
 
@@ -28,7 +30,7 @@ def list_all_staff(limit: int = 500) -> List[dict]:
     with get_db() as conn:
         return fetch_all(
             conn,
-            _SQL_RES + " ORDER BY horaire_reservation DESC LIMIT %s",
+            _SQL_RES + " ORDER BY r.horaire_reservation DESC LIMIT %s",
             (int(limit),),
         )
 
@@ -53,7 +55,7 @@ def create(
             (user_id, horaire_s, nombre_convives, designation_table, remarques_client),
         )
         rid = last_insert_id(conn)
-        row = fetch_one(conn, _SQL_RES + " WHERE id=%s", (rid,))
+        row = fetch_one(conn, _SQL_RES + " WHERE r.id=%s", (rid,))
     if not row:
         raise RuntimeError("Réservation non créée")
     return row
@@ -103,7 +105,7 @@ def set_status(res_id: int, new_status: str) -> dict | None:
                 "confirmee",
                 row.get("designation_table") if row else None,
             )
-        return fetch_one(conn, _SQL_RES + " WHERE id=%s", (res_id,))
+        return fetch_one(conn, _SQL_RES + " WHERE r.id=%s", (res_id,))
 
 
 def update_reservation(
@@ -135,7 +137,7 @@ def update_reservation(
             """,
             (horaire_s, nombre_convives, designation_table, remarques_client, res_id),
         )
-        return fetch_one(conn, _SQL_RES + " WHERE id=%s", (res_id,))
+        return fetch_one(conn, _SQL_RES + " WHERE r.id=%s", (res_id,))
 
 
 def delete_reservation(res_id: int, user_id: int, role: str) -> bool:

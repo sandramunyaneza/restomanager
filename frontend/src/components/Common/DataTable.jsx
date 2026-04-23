@@ -17,7 +17,7 @@ const DataTable = ({ columns, data, actions }) => {
           {data.map((row, idx) => (
             <tr key={row.id ?? idx}>
               {columns.map((col, colIdx) => (
-                <td key={colIdx}>{row[col.key]}</td>
+                <td key={colIdx}>{typeof col.render === 'function' ? col.render(row) : row[col.key]}</td>
               ))}
               {hasActions && (
                 <td>

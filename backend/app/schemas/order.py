@@ -56,6 +56,7 @@ class CommandeCreate(BaseModel):
 class CommandeOut(BaseModel):
     id: int
     id_client: int
+    nom_client: Optional[str] = None
     type_commande: str
     nature_commande: str
     table_id: Optional[int] = None

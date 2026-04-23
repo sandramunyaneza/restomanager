@@ -6,18 +6,13 @@ import * as deliveriesService from '../services/deliveriesService';
 const Livraisons = () => {
   const { user } = useAuth();
   const [livraisons, setLivraisons] = useState([]);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let alive = true;
     (async () => {
-      try {
-        const rows = await deliveriesService.fetchDeliveries();
-        if (!alive) return;
-        setLivraisons(rows);
-      } finally {
-        if (alive) setLoading(false);
-      }
+      const rows = await deliveriesService.fetchDeliveries();
+      if (!alive) return;
+      setLivraisons(rows);
     })();
     return () => {
       alive = false;
@@ -29,9 +24,9 @@ const Livraisons = () => {
       livraisons.map((l) => ({
         id: l.id,
         idCommande: l.id_commande,
-        client: l.id_commande ? `Commande #${l.id_commande}` : '',
+        client: l.nom_client || `Commande #${l.id_commande}`,
         adresse: l.adresse_livraison,
-        livreur: l.id_employe_livreur ? `Livreur #${l.id_employe_livreur}` : 'Non assigné',
+        livreur: l.nom_livreur || (l.id_employe_livreur ? `Livreur #${l.id_employe_livreur}` : 'Non assigné'),
         statut: l.avancement_livraison,
       })),
     [livraisons]
@@ -48,6 +43,13 @@ const Livraisons = () => {
         console.warn('Update livraison failed', e);
       }
     })();
+  };
+
+  const getActionsForLivraison = () => {
+    if (user?.role === 'admin' || user?.role === 'livreur') {
+      return [{ label: 'Mettre à jour', icon: 'fa-sync', className: 'btn-primary', onClick: handleUpdateLivraison }];
+    }
+    return [];
   };
 
   return (
@@ -70,9 +72,7 @@ const Livraisons = () => {
           { key: 'statut', label: 'Statut' }
         ]}
         data={tableRows}
-        actions={[
-          { label: 'Mettre à jour', icon: 'fa-sync', className: 'btn-primary', onClick: handleUpdateLivraison }
-        ]}
+        actions={getActionsForLivraison()}
       />
     </div>
   );

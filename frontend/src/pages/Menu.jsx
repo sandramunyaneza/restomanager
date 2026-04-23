@@ -76,9 +76,11 @@ const Menu = () => {
     }
   };
 
-  const handleAddToOrder = (plat) => {
-    ordersService.addProductToDraft(plat);
-    window.alert(`"${plat.nom_produit}" ajouté à la commande du client.`);
+  const handleAddToOrder = (row) => {
+    const produit = plats.find((p) => p.id === row.id);
+    if (!produit) return;
+    ordersService.addProductToDraft(produit);
+    window.alert(`« ${produit.nom_produit} » ajouté au panier. Ouvrez Mes commandes pour valider.`);
   };
 
   return (

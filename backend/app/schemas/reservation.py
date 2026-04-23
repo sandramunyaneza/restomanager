@@ -31,6 +31,7 @@ class ReservationStatsOut(BaseModel):
 class ReservationOut(BaseModel):
     id: int
     id_utilisateur: int
+    nom_client: Optional[str] = None
     horaire_reservation: datetime
     nombre_convives: int
     etat_reservation: str

@@ -8,7 +8,11 @@ if defined _OLD_CODEPAGE (
     "%SystemRoot%\System32\chcp.com" 65001 > nul
 )
 
+<<<<<<<< HEAD:.venv/Scripts/activate.bat
 set "VIRTUAL_ENV=C:\Users\LENOVO\Documents\examens\.venv"
+========
+set "VIRTUAL_ENV=C:\Users\Laurent\OneDrive\Documents\restomanager\backend\.venv"
+>>>>>>>> bc874cf0d78626b2f3ea239c15c5447812c4a5d7:backend/.venv/Scripts/activate.bat
 
 if not defined PROMPT set PROMPT=$P$G
 

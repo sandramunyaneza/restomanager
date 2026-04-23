@@ -12,9 +12,14 @@ SELECT
   l.id,
   l.id_commande,
   l.id_employe_livreur,
+  ul.nom_complet AS nom_livreur,
+  uc.nom_complet AS nom_client,
   l.adresse_livraison,
   l.avancement_livraison
 FROM livraisons l
+JOIN commandes c ON c.id = l.id_commande
+LEFT JOIN utilisateurs ul ON ul.id = l.id_employe_livreur
+LEFT JOIN utilisateurs uc ON uc.id = c.id_client
 """
 
 
@@ -34,7 +39,7 @@ def list_deliveries(
         else:
             rows = fetch_all(
                 conn,
-                "SELECT l.id, l.id_commande, l.id_employe_livreur, l.adresse_livraison, l.avancement_livraison FROM livraisons l ORDER BY l.id DESC LIMIT 500",
+                _SQL_LIV + " ORDER BY l.id DESC LIMIT 500",
             )
     return [LivraisonOut(**r) for r in rows]
 
@@ -54,8 +59,12 @@ def update_delivery(
         row = fetch_one(
             conn,
             """
-            SELECT l.id, l.id_commande, l.id_employe_livreur, l.adresse_livraison, l.avancement_livraison
+            SELECT l.id, l.id_commande, l.id_employe_livreur, ul.nom_complet AS nom_livreur,
+                   uc.nom_complet AS nom_client, l.adresse_livraison, l.avancement_livraison
             FROM livraisons l
+            JOIN commandes c ON c.id = l.id_commande
+            LEFT JOIN utilisateurs ul ON ul.id = l.id_employe_livreur
+            LEFT JOIN utilisateurs uc ON uc.id = c.id_client
             WHERE l.id=%s
             """,
             (delivery_id,),
@@ -102,8 +111,12 @@ def update_delivery(
         out = fetch_one(
             conn,
             """
-            SELECT l.id, l.id_commande, l.id_employe_livreur, l.adresse_livraison, l.avancement_livraison
+            SELECT l.id, l.id_commande, l.id_employe_livreur, ul.nom_complet AS nom_livreur,
+                   uc.nom_complet AS nom_client, l.adresse_livraison, l.avancement_livraison
             FROM livraisons l
+            JOIN commandes c ON c.id = l.id_commande
+            LEFT JOIN utilisateurs ul ON ul.id = l.id_employe_livreur
+            LEFT JOIN utilisateurs uc ON uc.id = c.id_client
             WHERE l.id=%s
             """,
             (delivery_id,),
@@ -129,10 +142,13 @@ def client_confirmer_livree(
         row = fetch_one(
             conn,
             """
-            SELECT l.id, l.id_commande, l.id_employe_livreur, l.adresse_livraison, l.avancement_livraison,
+            SELECT l.id, l.id_commande, l.id_employe_livreur, ul.nom_complet AS nom_livreur,
+                   uc.nom_complet AS nom_client, l.adresse_livraison, l.avancement_livraison,
                    c.id_client
             FROM livraisons l
             JOIN commandes c ON c.id = l.id_commande
+            LEFT JOIN utilisateurs ul ON ul.id = l.id_employe_livreur
+            LEFT JOIN utilisateurs uc ON uc.id = c.id_client
             WHERE l.id=%s
             """,
             (delivery_id,),
@@ -166,8 +182,12 @@ def client_confirmer_livree(
         out = fetch_one(
             conn,
             """
-            SELECT l.id, l.id_commande, l.id_employe_livreur, l.adresse_livraison, l.avancement_livraison
+            SELECT l.id, l.id_commande, l.id_employe_livreur, ul.nom_complet AS nom_livreur,
+                   uc.nom_complet AS nom_client, l.adresse_livraison, l.avancement_livraison
             FROM livraisons l
+            JOIN commandes c ON c.id = l.id_commande
+            LEFT JOIN utilisateurs ul ON ul.id = l.id_employe_livreur
+            LEFT JOIN utilisateurs uc ON uc.id = c.id_client
             WHERE l.id=%s
             """,
             (delivery_id,),

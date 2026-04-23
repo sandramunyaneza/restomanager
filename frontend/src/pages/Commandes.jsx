@@ -1,37 +1,66 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import DataTable from '../components/Common/DataTable';
+import Toast from '../components/Common/Toast';
+import { useToast } from '../hooks/useToast';
 import * as ordersService from '../services/ordersService';
 
 const Commandes = () => {
   const { user } = useAuth();
+  const { message: toastMessage, show: showToast } = useToast();
   const [commandes, setCommandes] = useState([]);
   const [draftLines, setDraftLines] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+
+  const refreshDraft = () => setDraftLines(ordersService.getDraftOrder());
 
   useEffect(() => {
     let alive = true;
     (async () => {
+      setLoadError('');
       try {
         const rows = await ordersService.fetchOrders(user?.role);
         if (!alive) return;
-        setCommandes(rows);
-        setDraftLines(ordersService.getDraftOrder());
+        setCommandes(Array.isArray(rows) ? rows : []);
+      } catch (e) {
+        if (!alive) return;
+        setCommandes([]);
+        const detail = e?.response?.data?.detail;
+        setLoadError(
+          typeof detail === 'string'
+            ? detail
+            : 'Impossible de charger vos commandes. Vérifiez la connexion et que le serveur API est démarré.'
+        );
       } finally {
+        refreshDraft();
         if (alive) setLoading(false);
       }
     })();
     return () => {
       alive = false;
     };
-  }, [user?.role]);
+  }, [user?.role, user?.id]);
+
+  useEffect(() => {
+    const onFocus = () => refreshDraft();
+    const onVis = () => {
+      if (document.visibilityState === 'visible') refreshDraft();
+    };
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onVis);
+    return () => {
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onVis);
+    };
+  }, []);
 
   const tableRows = useMemo(
     () =>
       commandes.map((o) => ({
         id: o.id,
         dateheure: o.cree_le,
-        client: o.id_client ? `Client #${o.id_client}` : '',
+        client: o.nom_client || (o.id_client ? `Client #${o.id_client}` : ''),
         montantTotal: Number(o.montant_total),
         statutCommande: o.etat_commande,
         paye: o.statut_reglement === 'payee',
@@ -44,7 +73,31 @@ const Commandes = () => {
       { key: 'dateheure', label: 'Date/Heure' },
       { key: 'client', label: 'Client' },
       { key: 'montantTotal', label: 'Montant' },
-      { key: 'statutCommande', label: 'Statut' }
+      { 
+        key: 'statutCommande', 
+        label: 'Statut',
+        render: (row) => {
+          const statusColors = {
+            'en_attente': '#ffc107',
+            'confirmee': '#17a2b8',
+            'en_cours': '#007bff',
+            'prete': '#28a745',
+            'livree': '#6c757d',
+            'annulee': '#dc3545'
+          };
+          return (
+            <span style={{ 
+              backgroundColor: statusColors[row.statutCommande] || '#6c757d',
+              color: 'white',
+              padding: '4px 8px',
+              borderRadius: '4px',
+              fontSize: '12px'
+            }}>
+              {row.statutCommande}
+            </span>
+          );
+        }
+      }
     ];
 
   const handleDeleteCommande = async (commande) => {
@@ -58,6 +111,13 @@ const Commandes = () => {
     await ordersService.updateOrderStatus(commande.id, 'confirmee');
     setCommandes((prev) =>
       prev.map((c) => (c.id === commande.id ? { ...c, etat_commande: 'confirmee' } : c))
+    );
+  };
+
+  const handleUpdateStatus = async (commande, nextStatus) => {
+    await ordersService.updateOrderStatus(commande.id, nextStatus);
+    setCommandes((prev) =>
+      prev.map((c) => (c.id === commande.id ? { ...c, etat_commande: nextStatus } : c))
     );
   };
 
@@ -75,6 +135,7 @@ const Commandes = () => {
       actions.push({ label: 'Supprimer', icon: 'fa-trash', className: 'btn-danger', onClick: handleDeleteCommande });
       actions.push({ label: 'Valider', icon: 'fa-check', className: 'btn-primary', onClick: handleValidateCommande });
     }
+    
     if (user?.role === 'cuisinier') {
       actions.push({
         label: 'Préparer',
@@ -95,6 +156,16 @@ const Commandes = () => {
         },
       });
     }
+    
+    if (user?.role === 'serveur') {
+      actions.push({
+        label: 'Servir',
+        icon: 'fa-hands-helping',
+        className: 'btn-primary',
+        onClick: (row) => handleUpdateStatus(row, 'livree')
+      });
+    }
+    
     return actions;
   };
 
@@ -133,19 +204,35 @@ const Commandes = () => {
       type_commande: 'sur_place',
       articles: draftLines.map((x) => ({ id_produit: x.id_produit, quantite: x.quantite })),
     };
-    await ordersService.createOrder(payload);
-    ordersService.clearDraftOrder();
-    setDraftLines([]);
-    const rows = await ordersService.fetchOrders(user?.role);
-    setCommandes(rows);
-    window.alert('Commande validée et envoyée.');
+    try {
+      await ordersService.createOrder(payload);
+      ordersService.clearDraftOrder();
+      setDraftLines([]);
+      const rows = await ordersService.fetchOrders(user?.role);
+      setCommandes(Array.isArray(rows) ? rows : []);
+      showToast('Commande ajoutée avec succès');
+    } catch (e) {
+      const detail = e?.response?.data?.detail;
+      const msg =
+        typeof detail === 'string'
+          ? detail
+          : e?.message || 'Échec de la création de la commande.';
+      showToast(msg);
+      window.alert(msg);
+    }
   };
 
   return (
     <div>
+      <Toast message={toastMessage} />
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
         <h2>Gestion des commandes</h2>
       </div>
+      {loadError && (
+        <p style={{ color: 'coral', marginBottom: 12 }} role="alert">
+          {loadError}
+        </p>
+      )}
 
       {(user?.role === 'client' || user?.role === 'serveur') && (
         <div style={{ marginBottom: 24 }}>
@@ -172,6 +259,7 @@ const Commandes = () => {
         </div>
       )}
       
+      <h3 style={{ marginBottom: '15px' }}>📋 Commandes en cours</h3>
       <DataTable
         columns={orderColumns}
         data={tableRows}

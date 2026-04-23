@@ -4,6 +4,8 @@ import DataTable from '../components/Common/DataTable';
 import Modal from '../components/Common/Modal';
 import * as reservationsService from '../services/reservationsService';
 
+const INITIAL_FORM = { date: '', heure: '', personnes: '', table: '', remarques: '' };
+
 const Reservations = () => {
   const { user } = useAuth();
   const [reservations, setReservations] = useState([]);
@@ -11,7 +13,16 @@ const Reservations = () => {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [formData, setFormData] = useState({ date: '', heure: '', personnes: '', table: '', remarques: '' });
+  const [formData, setFormData] = useState(INITIAL_FORM);
+
+  const refreshReservations = async () => {
+    const rows = await reservationsService.fetchReservations(user?.role);
+    setReservations(rows);
+    if (user?.role === 'admin') {
+      const s = await reservationsService.fetchReservationStats();
+      setStats(s);
+    }
+  };
 
   useEffect(() => {
     let alive = true;
@@ -37,61 +48,46 @@ const Reservations = () => {
     () =>
       reservations.map((r) => ({
         id: r.id,
-        client: r.id_utilisateur ? `Client #${r.id_utilisateur}` : '',
+        client: r.nom_client || (r.id_utilisateur ? `Client #${r.id_utilisateur}` : ''),
         date: String(r.horaire_reservation).slice(0, 10),
         heure: String(r.horaire_reservation).slice(11, 16),
         personnes: r.nombre_convives,
-        table: r.designation_table,
+        table: r.designation_table || '-',
         statut: r.etat_reservation,
       })),
     [reservations]
   );
 
-  const refreshReservations = async () => {
-    const rows = await reservationsService.fetchReservations(user?.role);
-    setReservations(rows);
-    if (user?.role === 'admin') {
-      const s = await reservationsService.fetchReservationStats();
-      setStats(s);
-    }
+  const resetForm = () => {
+    setEditingId(null);
+    setFormData(INITIAL_FORM);
   };
 
   const handleSaveReservation = async () => {
-    const horaire = `${formData.date} ${formData.heure}:00`;
-    const payload = editingId
-      ? {
-          horaire_reservation: horaire,
-          nombre_convives: Number(formData.personnes || 1),
-          designation_table: formData.table || null,
-          remarques_client: formData.remarques || null,
-        }
-      : {
-      horaire_reservation: horaire,
+    if (!formData.date || !formData.heure) {
+      window.alert('Veuillez saisir une date et une heure.');
+      return;
+    }
+    const payload = {
+      horaire_reservation: `${formData.date} ${formData.heure}:00`,
       nombre_convives: Number(formData.personnes || 1),
       designation_table: formData.table || null,
       remarques_client: formData.remarques || null,
     };
     if (editingId) {
       await reservationsService.updateReservation(editingId, payload);
-      await refreshReservations();
     } else {
-      const created = await reservationsService.createReservation(payload);
-      setReservations((prev) => [created, ...prev]);
-      if (user?.role === 'admin') {
-        const s = await reservationsService.fetchReservationStats();
-        setStats(s);
-      }
+      await reservationsService.createReservation(payload);
     }
+    await refreshReservations();
     setIsModalOpen(false);
-    setEditingId(null);
-    setFormData({ date: '', heure: '', personnes: '', table: '', remarques: '' });
+    resetForm();
   };
 
   const handleDeleteReservation = async (reservation) => {
-    if (window.confirm('Annuler cette réservation ?')) {
-      await reservationsService.deleteReservation(reservation.id);
-      await refreshReservations();
-    }
+    if (!window.confirm('Annuler cette réservation ?')) return;
+    await reservationsService.deleteReservation(reservation.id);
+    await refreshReservations();
   };
 
   const handleEditReservation = (reservation) => {
@@ -107,18 +103,39 @@ const Reservations = () => {
     setIsModalOpen(true);
   };
 
-  const handleValidateReservation = async (reservation) => {
-    await reservationsService.updateReservationStatus(reservation.id, 'validated');
+  const handleUpdateStatus = async (reservation, status) => {
+    await reservationsService.updateReservationStatus(reservation.id, status);
     await refreshReservations();
+  };
+
+  const getActionsForReservation = () => {
+    const actions = [];
+    if (['admin', 'serveur', 'caissier'].includes(user?.role)) {
+      actions.push({
+        label: 'Confirmer',
+        icon: 'fa-check-circle',
+        className: 'btn-primary',
+        onClick: (row) => handleUpdateStatus(row, 'confirmee'),
+      });
+      actions.push({
+        label: 'Terminer',
+        icon: 'fa-user-check',
+        className: 'btn-secondary',
+        onClick: (row) => handleUpdateStatus(row, 'terminee'),
+      });
+    }
+    actions.push({ label: 'Modifier', icon: 'fa-edit', className: 'btn-secondary', onClick: handleEditReservation });
+    actions.push({ label: 'Supprimer', icon: 'fa-trash', className: 'btn-danger', onClick: handleDeleteReservation });
+    return actions;
   };
 
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-        <h2>Gestion des réservations</h2>
+        <h2>Gestion des reservations</h2>
         {user?.role === 'client' && (
           <button className="btn-primary" onClick={() => setIsModalOpen(true)}>
-            <i className="fas fa-plus"></i> Nouvelle réservation
+            <i className="fas fa-plus" /> Nouvelle reservation
           </button>
         )}
       </div>
@@ -126,20 +143,20 @@ const Reservations = () => {
       {user?.role === 'admin' && (
         <div className="stats-grid" style={{ marginBottom: '20px' }}>
           <div className="stat-card">
-            <h3>Total réservations</h3>
+            <h3>Total reservations</h3>
             <p>{stats.total}</p>
           </div>
           <div className="stat-card">
-            <h3>Validées</h3>
+            <h3>Validees</h3>
             <p>{stats.validees}</p>
           </div>
           <div className="stat-card">
-            <h3>Non validées</h3>
+            <h3>Non validees</h3>
             <p>{stats.non_validees}</p>
           </div>
         </div>
       )}
-      
+
       <DataTable
         columns={[
           { key: 'id', label: 'ID' },
@@ -148,17 +165,20 @@ const Reservations = () => {
           { key: 'heure', label: 'Heure' },
           { key: 'personnes', label: 'Personnes' },
           { key: 'table', label: 'Table' },
-          { key: 'statut', label: 'Statut' }
+          { key: 'statut', label: 'Statut' },
         ]}
         data={tableRows}
-        actions={[
-          { label: 'Modifier', icon: 'fa-edit', className: 'btn-secondary', onClick: handleEditReservation },
-          { label: 'Supprimer', icon: 'fa-trash', className: 'btn-danger', onClick: handleDeleteReservation },
-          { label: 'Valider', icon: 'fa-check', className: 'btn-primary', onClick: handleValidateReservation },
-        ]}
+        actions={getActionsForReservation()}
       />
 
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingId ? 'Modifier réservation' : 'Nouvelle réservation'}>
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          resetForm();
+        }}
+        title={editingId ? 'Modifier reservation' : 'Nouvelle reservation'}
+      >
         <div className="form-group">
           <label>Date</label>
           <input type="date" value={formData.date} onChange={(e) => setFormData({ ...formData, date: e.target.value })} />
@@ -169,7 +189,13 @@ const Reservations = () => {
         </div>
         <div className="form-group">
           <label>Personnes</label>
-          <input type="number" value={formData.personnes} onChange={(e) => setFormData({ ...formData, personnes: e.target.value })} />
+          <input
+            type="number"
+            min="1"
+            max="50"
+            value={formData.personnes}
+            onChange={(e) => setFormData({ ...formData, personnes: e.target.value })}
+          />
         </div>
         <div className="form-group">
           <label>Table (optionnel)</label>
@@ -180,7 +206,7 @@ const Reservations = () => {
           <textarea value={formData.remarques} onChange={(e) => setFormData({ ...formData, remarques: e.target.value })} />
         </div>
         <button className="btn-primary" onClick={handleSaveReservation} disabled={loading}>
-          {editingId ? 'Enregistrer' : 'Créer réservation'}
+          {editingId ? 'Enregistrer' : 'Creer reservation'}
         </button>
       </Modal>
     </div>

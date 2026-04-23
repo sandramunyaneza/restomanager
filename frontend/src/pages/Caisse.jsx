@@ -6,7 +6,7 @@ import * as ordersService from '../services/ordersService';
 import * as paymentsService from '../services/paymentsService';
 
 const Caisse = () => {
-  const { user } = useAuth();
+  useAuth();
   const [commandes, setCommandes] = useState([]);
   const [paiements, setPaiements] = useState([]);
   const [selectedCommande, setSelectedCommande] = useState(null);
@@ -60,10 +60,10 @@ const Caisse = () => {
         const mode =
           paymentMethod === 'Espèces'
             ? 'especes'
-            : paymentMethod === 'Ticket restaurant'
-              ? 'ticket'
-              : paymentMethod === 'Virement'
-                ? 'virement'
+            : paymentMethod === 'Mobile pay'
+              ? 'mobile_pay'
+              : paymentMethod === 'Autre'
+                ? 'autre'
                 : 'carte';
         await paymentsService.createPayment({
           id_commande: selectedCommande.id,
@@ -135,7 +135,7 @@ const Caisse = () => {
         .filter((cmd) => cmd.etat_commande === 'livree' && cmd.statut_reglement !== 'payee')
         .map((cmd) => ({
           id: cmd.id,
-          client: `Client #${cmd.id_client}`,
+          client: cmd.nom_client || `Client #${cmd.id_client}`,
           dateheure: cmd.cree_le,
           montantTotal: Number(cmd.montant_total),
         })),
@@ -148,7 +148,7 @@ const Caisse = () => {
         .filter((cmd) => cmd.statut_reglement === 'payee')
         .map((cmd) => ({
           id: cmd.id,
-          client: `Client #${cmd.id_client}`,
+          client: cmd.nom_client || `Client #${cmd.id_client}`,
           dateheure: cmd.cree_le,
           montantTotal: Number(cmd.montant_total),
         })),
@@ -271,9 +271,8 @@ const Caisse = () => {
               <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}>
                 <option>Carte bancaire</option>
                 <option>Espèces</option>
-                <option>Ticket restaurant</option>
-                <option>Virement</option>
                 <option>Mobile pay</option>
+                <option>Autre</option>
               </select>
             </div>
             <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
