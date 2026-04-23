@@ -50,7 +50,7 @@ const Reservations = () => {
     () =>
       reservations.map((r) => ({
         id: r.id,
-        client: r.id_utilisateur ? `Client #${r.id_utilisateur}` : '',
+        client: r.client_nom || `Client #${r.id_utilisateur}`,
         date: String(r.horaire_reservation).slice(0, 10),
         heure: String(r.horaire_reservation).slice(11, 16),
         personnes: r.nombre_convives,

@@ -8,16 +8,17 @@ router = APIRouter(prefix="/reservations", tags=["reservations"])
 
 _SQL_RES = """
 SELECT
-  id,
-  id_utilisateur,
-  horaire_reservation,
-  nombre_convives,
-  etat_reservation,
-  designation_table,
-  remarques_client
-FROM reservations
+  r.id,
+  r.id_utilisateur,
+  r.horaire_reservation,
+  r.nombre_convives,
+  r.etat_reservation,
+  r.designation_table,
+  r.remarques_client,
+  u.nom_complet AS client_nom
+FROM reservations r
+LEFT JOIN utilisateurs u ON u.id = r.id_utilisateur
 """
-
 
 @router.get("", response_model=list[ReservationOut])
 def list_reservations(

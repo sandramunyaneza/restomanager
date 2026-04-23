@@ -14,20 +14,21 @@ def list_payments(_role: str = Depends(require_roles("admin", "caissier"))):
             conn,
             """
             SELECT
-              id,
-              id_commande,
-              montant_verse AS montant,
-              mode_reglement,
-              etat_transaction,
-              cree_le,
-              id_employe_encaissement
-            FROM paiements
-            ORDER BY cree_le DESC LIMIT 500
+              p.id,
+              p.id_commande,
+              p.montant_verse AS montant,
+              p.mode_reglement,
+              p.etat_transaction,
+              p.cree_le,
+              p.id_employe_encaissement,
+              u.nom_complet AS client_nom
+            FROM paiements p
+            LEFT JOIN commandes c ON c.id = p.id_commande
+            LEFT JOIN utilisateurs u ON u.id = c.id_client
+            ORDER BY p.cree_le DESC LIMIT 500
             """,
         )
     return [PaiementOut(**r) for r in rows]
-
-
 @router.post("", response_model=PaiementOut, status_code=status.HTTP_201_CREATED)
 def create_payment(
     body: PaiementCreate,
@@ -61,9 +62,19 @@ def create_payment(
         row = fetch_one(
             conn,
             """
-            SELECT id, id_commande, montant_verse AS montant, mode_reglement, etat_transaction,
-                   cree_le, id_employe_encaissement
-            FROM paiements WHERE id=%s
+            SELECT 
+              p.id, 
+              p.id_commande, 
+              p.montant_verse AS montant, 
+              p.mode_reglement, 
+              p.etat_transaction,
+              p.cree_le, 
+              p.id_employe_encaissement,
+              u.nom_complet AS client_nom
+            FROM paiements p
+            LEFT JOIN commandes c ON c.id = p.id_commande
+            LEFT JOIN utilisateurs u ON u.id = c.id_client
+            WHERE p.id=%s
             """,
             (pid,),
         )

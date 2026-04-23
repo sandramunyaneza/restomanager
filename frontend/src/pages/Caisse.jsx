@@ -111,7 +111,7 @@ const Caisse = () => {
     
     return encaissables.map((cmd) => ({
       id: cmd.id,
-      client: `Client #${cmd.id_client}`,
+      client: cmd.client_nom || `Client #${cmd.id_client}`,
       dateheure: new Date(cmd.cree_le).toLocaleString(),
       montantTotal: Number(cmd.montant_total),
     }));
@@ -122,7 +122,7 @@ const Caisse = () => {
     
     return payees.map((cmd) => ({
       id: cmd.id,
-      client: `Client #${cmd.id_client}`,
+      client: cmd.client_nom || `Client #${cmd.id_client}`,
       dateheure: new Date(cmd.cree_le).toLocaleString(),
       montantTotal: Number(cmd.montant_total),
       modePaiement: paiements.find(p => p.id_commande === cmd.id)?.mode_reglement || 'Non spécifié'

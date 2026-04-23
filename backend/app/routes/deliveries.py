@@ -8,14 +8,17 @@ router = APIRouter(prefix="/deliveries", tags=["deliveries"])
 
 _SQL_LIV = """
 SELECT
-  id,
-  id_commande,
-  id_employe_livreur,
-  adresse_livraison,
-  avancement_livraison
-FROM livraisons
+  l.id,
+  l.id_commande,
+  l.id_employe_livreur,
+  l.adresse_livraison,
+  l.avancement_livraison,
+  u.nom_complet AS livreur_nom,
+  c.client_nom
+FROM livraisons l
+LEFT JOIN utilisateurs u ON u.id = l.id_employe_livreur
+LEFT JOIN (SELECT co.id, cl.nom_complet AS client_nom FROM commandes co LEFT JOIN utilisateurs cl ON cl.id = co.id_client) c ON c.id = l.id_commande
 """
-
 
 @router.get("", response_model=list[LivraisonOut])
 def list_deliveries(

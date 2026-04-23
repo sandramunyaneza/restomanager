@@ -27,6 +27,7 @@ class CommandeOut(BaseModel):
     statut_reglement: str
     cree_le: datetime
     remarques_commande: Optional[str] = None
+    client_nom: Optional[str] = None
 
 
 class CommandeStatutMiseAJour(BaseModel):

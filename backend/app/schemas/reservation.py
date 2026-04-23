@@ -23,3 +23,4 @@ class ReservationOut(BaseModel):
     etat_reservation: str
     designation_table: Optional[str] = None
     remarques_client: Optional[str] = None
+    client_nom: Optional[str] = None
